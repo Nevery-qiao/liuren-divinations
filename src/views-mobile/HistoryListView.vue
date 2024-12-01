@@ -30,30 +30,33 @@ const showDrawer = ref(false)
 const handleNewDivination = async (data: { number: number; time: string; question?: string }) => {
   try {
     // 先获取占卜结果
-    const result = await getDivinationInfo(data.number.toString(), data.time)
-    if (!result || result.code !== 0) {
-      console.error('[HistoryListView] Invalid result:', result)
-      ElMessage.error('获取占卜信息失败，请稍后重试')
-      return
-    }
-
-    // 创建历史记录
-    const history = {
-      id: Date.now().toString(),
+    const result = await getDivinationInfo({
       number: data.number,
-      time: data.time,
-      question: data.question || '',
-      timestamp: Date.now(),
-      notes: '',
-      result
-    }
+      time: data.time
+    })
     
-    // 添加到历史记录并跳转
-    historyStore.addHistory(history)
-    router.push(`/mobile/divination/${history.id}`)
+    if (result.code === 0 && result.data) {
+      // 创建历史记录
+      const history = {
+        id: Date.now().toString(),
+        number: data.number,
+        time: data.time,
+        question: data.question || '',
+        timestamp: Date.now(),
+        notes: '',
+        result: result.data
+      }
+      
+      // 添加到历史记录并跳转
+      historyStore.addHistory(history)
+      router.push(`/mobile/divination/${history.id}`)
+    } else {
+      console.error('[HistoryListView] Invalid result:', result)
+      ElMessage.error(result.msg || '获取占卜信息失败，请稍后重试')
+    }
   } catch (error) {
     console.error('[HistoryListView] Failed to get divination result:', error)
-    ElMessage.error('获取占卜信息失败，请稍后重试')
+    ElMessage.error(error instanceof Error ? error.message : '获取占卜信息失败，请稍后重试')
   }
 }
 </script>

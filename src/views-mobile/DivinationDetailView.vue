@@ -153,6 +153,33 @@ const confirmDelete = () => {
   router.back()
   showDeleteConfirm.value = false
 }
+
+// 刷新占卜信息
+const loading = ref(false)
+async function refreshDivination() {
+  if (!currentHistory.value) return;
+  
+  try {
+    loading.value = true;
+    const result = await getDivinationInfo({
+      number: currentHistory.value.number.toString(),
+      time: currentHistory.value.time
+    });
+    
+    if (result.code === 0 && result.data) {
+      // 更新历史记录
+      currentHistory.value.result = result.data;
+      historyStore.updateHistory(currentHistory.value);
+    } else {
+      ElMessage.error(result.msg || '刷新占卜信息失败');
+    }
+  } catch (error) {
+    console.error('[DivinationDetailView] Failed to refresh divination:', error);
+    ElMessage.error(error instanceof Error ? error.message : '刷新占卜信息失败');
+  } finally {
+    loading.value = false;
+  }
+}
 </script>
 
 <style scoped>

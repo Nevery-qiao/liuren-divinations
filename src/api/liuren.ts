@@ -27,7 +27,12 @@ export interface GongCollection {
     gong6: GongInfo; // 宫位6-空亡
 }
 
-export interface DivinationResponse {
+export interface DivinationParams {
+    number: string;
+    time?: string;
+}
+
+export interface DivinationResult {
     code: number;
     data: {
         divination_number: string;
@@ -43,6 +48,7 @@ export interface DivinationResponse {
             gongInfoArray: GongInfo[];  // 映射前的宫位数组
         };
     } | null;
+    msg?: string;
 }
 
 // JSONP 实现
@@ -87,41 +93,36 @@ function jsonp(url: string, timeout = 5000): Promise<any> {
   });
 }
 
-export async function getDivinationInfo(number: string, time?: string): Promise<DivinationResponse> {
+export async function getDivinationInfo(params: DivinationParams): Promise<DivinationResult> {
     try {
-        console.log('Starting getDivinationInfo with:', { number, time });
+        console.log('Starting getDivinationInfo with:', params);
         
-        if (!Number.isInteger(Number(number))) {
+        if (!Number.isInteger(Number(params.number))) {
             throw new Error('占数必须是整数');
         }
 
-        const dateTime = parseDateTime(time);
+        const dateTime = parseDateTime(params.time);
         const shichen = getShichen(dateTime.hour);
         console.log('Processed datetime:', { dateTime, shichen });
 
-        const params = {
-            ri: number,
+        const requestParams = {
+            ri: params.number,
             shi: shichen.toString()
         };
         
-        console.log('Request params:', params);
-
-        // 构建 URL
-        const url = new URL(API_URL);
-        Object.entries(params).forEach(([key, value]) => {
-          url.searchParams.append(key, value);
-        });
+        console.log('Request params:', requestParams);
 
         // 使用代理服务器请求
-        const response = await axios.get(url.toString(), {
-          timeout: 5000,
-          headers: {
-            'Accept': 'application/json'
-          }
+        const response = await axios.get(API_URL, {
+            params: requestParams,
+            timeout: 5000,
+            headers: {
+                'Accept': 'application/json'
+            }
         });
         
         if (!response.data || response.data.code === -1) {
-          throw new Error(response.data?.msg || '获取数据失败');
+            throw new Error(response.data?.msg || '获取数据失败');
         }
         
         const apiResponse = response.data;
@@ -134,7 +135,7 @@ export async function getDivinationInfo(number: string, time?: string): Promise<
                 return {
                     code: 0,
                     data: {
-                        divination_number: number,
+                        divination_number: params.number,
                         lunar_time: parsedResponse.lunar_time || '',
                         yangli_time: formatDateTime(dateTime),
                         time_palace: parsedResponse.time_palace || '',
@@ -164,7 +165,7 @@ export async function getDivinationInfo(number: string, time?: string): Promise<
         return {
             code: 0,
             data: {
-                divination_number: number,
+                divination_number: params.number,
                 lunar_time: apiResponse.lunar_time || '',
                 yangli_time: formatDateTime(dateTime),
                 time_palace: apiResponse.time_palace || '',
@@ -189,7 +190,8 @@ export async function getDivinationInfo(number: string, time?: string): Promise<
         console.error('Error in getDivinationInfo:', error);
         return {
             code: -1,
-            data: null
+            data: null,
+            msg: error.message || '网络错误，请检查网络连接'
         };
     }
 }
