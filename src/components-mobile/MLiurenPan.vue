@@ -7,7 +7,7 @@
           :class="{
             'time-palace': getGongInfo(i).position === history.result?.data?.time_palace,
             'day-palace': getGongInfo(i).position === history.result?.data?.day_palace,
-            'body-palace': getGongInfo(i).relation === '自身'
+            'body-palace': getGongInfo(i).position === history.result?.data?.zishen_info?.zishen
           }"
         >
           <div class="gong-content">
@@ -211,19 +211,22 @@ const getGongInfo = (index: number) => {
 }
 
 .time-palace {
-  background-color: #e8f4ff !important;
+  background-color: rgba(33, 150, 243, 0.15) !important;
+  border-color: #2196F3;
 }
 
 .day-palace {
-  background-color: #f6ffed !important;
+  background-color: rgba(76, 175, 80, 0.15) !important;
+  border-color: #4CAF50;
 }
 
 .body-palace {
-  background-color: #f6ffed !important;
+  background-color: rgba(76, 175, 80, 0.15) !important;
+  border-color: #4CAF50;
 }
 
 .body-palace .gong-position {
   color: #4CAF50;
-  background-color: rgba(76, 175, 80, 0.1);
+  background-color: rgba(76, 175, 80, 0.2);
 }
 </style>

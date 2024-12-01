@@ -6,7 +6,7 @@ import MobileLayout from '../layouts/MobileLayout.vue'
 const isMobileDevice = () => window.innerWidth < 768
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',

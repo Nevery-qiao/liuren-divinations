@@ -48,25 +48,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     });
 
-    // 验证响应格式
-    if (typeof response.data === 'string') {
-      try {
-        response.data = JSON.parse(response.data);
-      } catch (e) {
-        console.error('Failed to parse API response:', e);
-        return res.status(500).json({
-          code: -1,
-          msg: 'API 返回格式错误'
-        });
-      }
-    }
-
-    return res.status(200).json(response.data);
-  } catch (error: any) {
+    res.status(200).json(response.data);
+  } catch (error) {
     console.error('Proxy error:', error);
-    return res.status(500).json({
+    res.status(500).json({
       code: -1,
-      msg: error.response?.data?.msg || error.message || '服务器错误'
+      msg: '服务器错误'
     });
   }
 }

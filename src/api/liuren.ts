@@ -1,10 +1,26 @@
 import axios from 'axios';
 import { Lunar } from 'lunar-typescript';
 
-// 使用 HTTPS API URL
-const API_URL = import.meta.env.PROD 
-  ? '/api/proxy'  // 生产环境使用相对路径
-  : 'http://localhost:3000/api/proxy';  // 开发环境使用本地地址
+// 使用本地代理 URL
+const API_URL = '/api/proxy';
+
+// axios 配置
+const apiClient = axios.create({
+    timeout: 5000,
+    headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+    }
+});
+
+// 添加请求拦截器，处理 CORS
+apiClient.interceptors.request.use((config) => {
+    // 开发环境下添加特殊处理
+    if (process.env.NODE_ENV === 'development') {
+        config.headers['X-Requested-With'] = 'XMLHttpRequest';
+    }
+    return config;
+});
 
 const gongPositions = ["大安", "留连", "速喜", "赤口", "小吉", "空亡"];
 
@@ -41,6 +57,10 @@ export interface DivinationResult {
         time_palace: string;    // 时宫名称
         day_palace: string;     // 日宫名称
         gong_info: GongCollection;
+        zishen_info: {
+            dizhi: string;    // 当前地支
+            zishen: string;  // 自身所在宫的属性
+        };
         debug_info: {           // 调试信息
             api_response: any;   // API原始返回数据
             shichen: number;     // 计算的时辰
@@ -91,6 +111,246 @@ function jsonp(url: string, timeout = 5000): Promise<any> {
     // 添加到页面
     document.body.appendChild(script);
   });
+}
+
+const response = await apiClient.get(API_URL, { params });
+console.log('API Response:', response);
+
+if (!response.data) {
+    console.error('Empty response data');
+    throw new Error('API 返回为空');
+}
+
+// Transform API response
+const apiResponse = response.data;
+const lunarInfo = getLunarInfo(dateTime, number);
+        
+// 基础信息
+const baseInfo = apiResponse[0];
+if (!baseInfo) {
+    throw new Error('API 返回数据格式错误');
+}
+
+// 构建完整的宫位信息
+const gongInfo = {
+    gong1: transformGongInfo({
+        god: baseInfo.liushen?.[0] || "",          // 六神
+        relation: baseInfo.liuqin?.[0] || "",      // 六亲
+        star: baseInfo.wuxing?.[0] || "",          // 五行
+        branch: baseInfo.dizhis?.[0] || "",        // 地支
+        divination_number: baseInfo.zhangshu || "" // 占数
+    }, "大安", "1"),
+    gong2: transformGongInfo({
+        god: baseInfo.liushen?.[1] || "",
+        relation: baseInfo.liuqin?.[1] || "",
+        star: baseInfo.wuxing?.[1] || "",
+        branch: baseInfo.dizhis?.[1] || "",
+        divination_number: baseInfo.zhangshu || ""
+    }, "留连", "2"),
+    gong3: transformGongInfo({
+        god: baseInfo.liushen?.[2] || "",
+        relation: baseInfo.liuqin?.[2] || "",
+        star: baseInfo.wuxing?.[2] || "",
+        branch: baseInfo.dizhis?.[2] || "",
+        divination_number: baseInfo.zhangshu || ""
+    }, "速喜", "3"),
+    gong4: transformGongInfo({
+        god: baseInfo.liushen?.[3] || "",
+        relation: baseInfo.liuqin?.[3] || "",
+        star: baseInfo.wuxing?.[3] || "",
+        branch: baseInfo.dizhis?.[3] || "",
+        divination_number: baseInfo.zhangshu || ""
+    }, "赤口", "4"),
+    gong5: transformGongInfo({
+        god: baseInfo.liushen?.[4] || "",
+        relation: baseInfo.liuqin?.[4] || "",
+        star: baseInfo.wuxing?.[4] || "",
+        branch: baseInfo.dizhis?.[4] || "",
+        divination_number: baseInfo.zhangshu || ""
+    }, "小吉", "5"),
+    gong6: transformGongInfo({
+        god: baseInfo.liushen?.[5] || "",
+        relation: baseInfo.liuqin?.[5] || "",
+        star: baseInfo.wuxing?.[5] || "",
+        branch: baseInfo.dizhis?.[5] || "",
+        divination_number: baseInfo.zhangshu || ""
+    }, "空亡", "6")
+};
+
+// 计算宫位
+const timePalace = gongPositions[apiResponse.shigong - 1] || gongPositions[shichen % 6];
+const dayPalace = gongPositions[apiResponse.rigong - 1] || gongPositions[Number(number) % 6];
+
+// 添加自身信息
+const zishenInfo = {
+    dizhi: baseInfo.dizhi || "",    // 当前地支
+    zishen: baseInfo.zishen || "",  // 自身所在宫的属性
+};
+
+return {
+    code: 0,
+    data: {
+        divination_number: number,
+        lunar_time: lunarInfo.lunarTime,
+        yangli_time: formatDateTime(dateTime),
+        time_palace: timePalace,
+        day_palace: dayPalace,
+        gong_info: gongInfo,
+        zishen_info: zishenInfo,    // 添加自身信息
+        debug_info: {
+            api_response: apiResponse,
+            shichen: shichen,
+            input_hour: dateTime.hour,
+            gongInfoArray: Object.values(gongInfo)
+        }
+    }
+};
+} catch (error: any) {
+    console.error('Error in getDivinationInfo:', error);
+    return {
+        code: -1,
+        data: null
+    };
+}
+
+// Helper function to transform gong information
+function transformGongInfo(apiGong: any, defaultPosition: string, number: string): GongInfo {
+    return {
+        position: defaultPosition,
+        god: apiGong.god || "",
+        relation: apiGong.relation || "",
+        star: apiGong.star || "",
+        branch: apiGong.branch || "",
+        number: number,
+        divination_number: apiGong.divination_number || ""
+    };
+}
+
+// Update getLunarInfo function to provide lunar time information
+function getLunarInfo(dateTime: { year: number; month: number; day: number; hour: number }, divination_number: string) {
+    const date = new Date(dateTime.year, dateTime.month - 1, dateTime.day, dateTime.hour);
+    const lunar = Lunar.fromDate(date);
+    
+    return {
+        lunarTime: `${lunar.getYearInGanZhi()}年  ${lunar.getMonthInGanZhi()}月  ${lunar.getDayInGanZhi()}日  ${lunar.getTimeInGanZhi()}时 【数字：${divination_number}】`,
+        shichen: getShichen(dateTime.hour)
+    };
+}
+
+function parseDateTime(time: string | undefined): { year: number; month: number; day: number; hour: number; minute: number } {
+    console.log('parseDateTime input:', time);
+
+    if (!time) {
+        console.log('No time provided, using current time');
+        const now = new Date();
+        return {
+            year: now.getFullYear(),
+            month: now.getMonth() + 1,
+            day: now.getDate(),
+            hour: now.getHours(),
+            minute: now.getMinutes()
+        };
+    }
+
+    time = time.replace(/：/g, ':').trim();
+    console.log('Processed time string:', time);
+
+    try {
+        if (time.includes(' ')) {
+            console.log('Processing time with space');
+            const [dateStr, timeStr] = time.split(' ');
+            console.log('Date part:', dateStr, 'Time part:', timeStr);
+            
+            let year: number, month: number, day: number;
+
+            if (dateStr.split('-').length === 3) {
+                console.log('Full date format (YYYY-MM-DD)');
+                [year, month, day] = dateStr.split('-').map(Number);
+            } else if (dateStr.split('-').length === 2) {
+                console.log('Short date format (MM-DD)');
+                [month, day] = dateStr.split('-').map(Number);
+                year = new Date().getFullYear();
+                console.log('Using current year:', year);
+            } else {
+                console.log('Invalid date format:', dateStr);
+                throw new Error('Invalid date format');
+            }
+
+            const [hour, minute] = timeStr.split(':').map(Number);
+            console.log('Parsed components:', { year, month, day, hour, minute });
+            
+            if ([year, month, day, hour, minute].some(isNaN)) {
+                console.log('Some components are NaN:', { year, month, day, hour, minute });
+                throw new Error('Invalid date/time components');
+            }
+            
+            if (month < 1 || month > 12 || day < 1 || day > 31 || 
+                hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+                console.log('Components out of range:', { year, month, day, hour, minute });
+                throw new Error('Date/time values out of range');
+            }
+            
+            return {
+                year,
+                month,
+                day,
+                hour,
+                minute
+            };
+        } else if (time.includes('-')) {
+            console.log('Processing time with hyphens only');
+            const [year, month, day, timeStr] = time.split('-');
+            const [hour, minute] = timeStr ? timeStr.split(':').map(Number) : [0, 0];
+            
+            const parsedYear = parseInt(year);
+            const parsedMonth = parseInt(month);
+            const parsedDay = parseInt(day);
+            
+            if ([parsedYear, parsedMonth, parsedDay, hour, minute].some(isNaN)) {
+                throw new Error('Invalid date/time components');
+            }
+            
+            if (parsedMonth < 1 || parsedMonth > 12 || parsedDay < 1 || parsedDay > 31 || 
+                hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+                throw new Error('Date/time values out of range');
+            }
+            
+            return {
+                year: parsedYear,
+                month: parsedMonth,
+                day: parsedDay,
+                hour,
+                minute
+            };
+        } else {
+            console.log('Processing time only format');
+            const now = new Date();
+            const [hour, minute] = time.split(':').map(Number);
+            
+            if ([hour, minute].some(isNaN) || hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+                throw new Error('Invalid time format');
+            }
+            
+            return {
+                year: now.getFullYear(),
+                month: now.getMonth() + 1,
+                day: now.getDate(),
+                hour,
+                minute
+            };
+        }
+    } catch (error) {
+        console.error('Error parsing datetime:', error);
+        throw new Error('时间格式不正确');
+    }
+}
+
+function formatDateTime(date: { year: number; month: number; day: number; hour: number; minute: number }): string {
+    const month = date.month.toString().padStart(2, '0');
+    const day = date.day.toString().padStart(2, '0');
+    const hour = date.hour.toString().padStart(2, '0');
+    const minute = date.minute.toString().padStart(2, '0');
+    return `${date.year}年${month}月${day}日 ${hour}:${minute}`;
 }
 
 // 计算时辰
@@ -192,7 +452,7 @@ export async function getDivinationInfo(params: DivinationParams): Promise<Divin
     console.log('Request params:', requestParams);
 
     // 使用代理服务器请求
-    const response = await axios.get(API_URL, {
+    const response = await apiClient.get(API_URL, {
       params: requestParams,
       timeout: 5000,
       headers: {

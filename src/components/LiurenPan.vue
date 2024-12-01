@@ -54,7 +54,7 @@
                 :class="{
                   'time-palace': getGongInfo(i).position === divinationResult?.data?.time_palace,
                   'day-palace': getGongInfo(i).position === divinationResult?.data?.day_palace,
-                  'body-palace': getGongInfo(i).relation === '自身'
+                  'body-palace': getGongInfo(i).position === divinationResult?.data?.zishen_info?.zishen
                 }"
               >
                 <div class="gong-content">
