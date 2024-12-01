@@ -1,7 +1,12 @@
 import axios from 'axios';
 import { Lunar } from 'lunar-typescript';
 
-const apiUrl = 'https://demo1.w258.cn/2024/xlr/pan.php';
+// 使用 CORS 代理
+const CORS_PROXY = 'https://cors-anywhere.herokuapp.com/';
+const API_URL = 'http://demo1.w258.cn/2024/xlr/pan.php';
+const apiUrl = `${CORS_PROXY}${API_URL}`;
+
+const gongPositions = ["大安", "留连", "速喜", "赤口", "小吉", "空亡"];
 
 export interface GongInfo {
     position: string;    // 宫位名称
@@ -42,36 +47,52 @@ export interface DivinationResponse {
 
 export async function getDivinationInfo(number: string, time?: string): Promise<DivinationResponse> {
     try {
+        console.log('Starting getDivinationInfo with:', { number, time });
+        
         if (!Number.isInteger(Number(number))) {
             throw new Error('占数必须是整数');
         }
 
         const dateTime = parseDateTime(time);
         const shichen = getShichen(dateTime.hour);
+        console.log('Processed datetime:', { dateTime, shichen });
 
         // 构建请求参数
         const params = new URLSearchParams();
         params.append('ri', number);
         params.append('shi', shichen.toString());
+        console.log('Request params:', params.toString());
+        console.log('Request URL:', apiUrl);
 
         const response = await axios.post(apiUrl, params, {
             headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Origin': 'https://liuren-divinations.vercel.app'
             }
         });
 
-        if (!response.data || response.data.code !== 200) {
-            throw new Error('API 返回错误');
+        console.log('API Response:', response);
+
+        if (!response.data) {
+            console.error('Empty response data');
+            throw new Error('API 返回为空');
+        }
+
+        if (response.data.code !== 200) {
+            console.error('API error response:', response.data);
+            throw new Error(`API 返回错误: ${response.data.message || '未知错误'}`);
         }
 
         const apiResponse = response.data.data;
         if (!apiResponse) {
+            console.error('Empty API response data');
             throw new Error('API 返回数据为空');
         }
 
+        console.log('Processed API response:', apiResponse);
+
         const formattedDateTime = formatDateTime(dateTime);
         
-        const gongPositions = ["大安", "留连", "速喜", "赤口", "小吉", "空亡"];
         const timePalacePosition = gongPositions[apiResponse.shigong - 1];
         const dayPalacePosition = gongPositions[apiResponse.rigong - 1];
 
