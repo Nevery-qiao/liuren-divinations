@@ -52,90 +52,104 @@ const addButtonRef = ref<HTMLElement | null>(null)
 
 // 切换输入区域显示状态
 const toggleInput = () => {
-  console.log('toggleInput called, current state:', showInput.value)
-  showInput.value = !showInput.value
-  
+  console.log('toggleInput called, current state:', showInput.value);
+  showInput.value = !showInput.value;
   if (showInput.value) {
-    // 设置默认时间
-    divinationTime.value = dayjs().format('MM-DD HH:mm')
-    console.log('Default time set:', divinationTime.value)
-    // 自动聚焦到占数输入框
+    // 设置默认时间为当前时间
+    const now = dayjs();
+    divinationTime.value = now.format('MM-DD HH:mm');
+    console.log('Default time set:', divinationTime.value);
+    // 聚焦数字输入框
     nextTick(() => {
-      console.log('Focusing number input')
-      numberInput.value?.focus()
-    })
+      console.log('Focusing number input');
+      numberInput.value?.focus();
+    });
   }
-}
+};
 
 // 隐藏输入区域
 const hideInput = () => {
-  console.log('hideInput called')
-  showInput.value = false
-  resetForm()
-}
+  console.log('hideInput called');
+  showInput.value = false;
+  resetForm();
+};
 
 // 重置表单
 const resetForm = () => {
-  console.log('resetForm called')
-  divinationNumber.value = ''
-  divinationTime.value = ''
-}
+  console.log('resetForm called');
+  divinationNumber.value = '';
+  divinationTime.value = '';
+};
 
 // 确认提交
 const handleConfirm = () => {
   console.log('handleConfirm called with:', {
     number: divinationNumber.value,
     time: divinationTime.value
-  })
+  });
 
   if (!divinationNumber.value) {
-    console.log('No divination number provided')
-    ElMessage.warning('请输入占数')
-    return
+    console.log('No divination number provided');
+    ElMessage.warning('请输入占数');
+    return;
+  }
+
+  const number = parseInt(divinationNumber.value);
+  if (isNaN(number) || number < 1 || number > 100) {
+    console.log('Invalid number:', number);
+    ElMessage.warning('占数必须是 1-100 之间的整数');
+    return;
+  }
+  
+  // 验证并格式化时间
+  let time = divinationTime.value;
+  if (!time) {
+    time = dayjs().format('MM-DD HH:mm');
   }
   
   // 验证时间格式
-  const timePattern = /^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]) ([01]\d|2[0-3]):([0-5]\d)$/
-  if (!timePattern.test(divinationTime.value)) {
-    console.log('Invalid time format:', divinationTime.value)
-    ElMessage.warning('请输入正确的时间格式：MM-DD HH:mm')
-    return
+  const timePattern = /^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]) ([01]\d|2[0-3]):([0-5]\d)$/;
+  if (!timePattern.test(time)) {
+    console.log('Invalid time format:', time);
+    ElMessage.warning('请输入正确的时间格式：MM-DD HH:mm');
+    return;
   }
 
   console.log('Emitting confirm event with:', {
-    number: parseInt(divinationNumber.value),
-    time: divinationTime.value
-  })
+    number,
+    time
+  });
 
   emit('confirm', {
-    number: parseInt(divinationNumber.value),
-    time: divinationTime.value
-  })
+    number,
+    time
+  });
   
-  hideInput()
-}
+  hideInput();
+  resetForm();
+};
 
 // 点击外部处理函数
 const handleClickOutside = (event: MouseEvent) => {
-  console.log('handleClickOutside called')
+  console.log('handleClickOutside called');
   // 如果点击事件不是来自输入区域或添加按钮，并且输入区域正在显示，才隐藏
   if (showInput.value && 
       !inputAreaRef.value?.contains(event.target as Node) && 
       !addButtonRef.value?.contains(event.target as Node)) {
-    hideInput()
+    hideInput();
   }
-}
+};
 
 // 生命周期钩子
 onMounted(() => {
-  console.log('NewDivinationInput component mounted')
-  document.addEventListener('click', handleClickOutside)
-})
+  console.log('NewDivinationInput component mounted');
+  document.addEventListener('click', handleClickOutside);
+});
 
 onUnmounted(() => {
-  console.log('NewDivinationInput component unmounting')
-  document.removeEventListener('click', handleClickOutside)
-})
+  console.log('NewDivinationInput component unmounting');
+  document.removeEventListener('click', handleClickOutside);
+});
 </script>
 
 <style scoped>

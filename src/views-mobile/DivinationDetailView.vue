@@ -161,9 +161,13 @@ async function refreshDivination() {
   
   try {
     loading.value = true;
+    // 格式化时间为 MM-DD HH:mm 格式
+    const time = dayjs(currentHistory.value.time).format('MM-DD HH:mm');
+    console.log('Formatted time:', time);
+    
     const result = await getDivinationInfo({
       number: currentHistory.value.number.toString(),
-      time: currentHistory.value.time
+      time: time
     });
     
     if (result.code === 0 && result.data) {
