@@ -3,11 +3,6 @@ import { Lunar } from 'lunar-typescript';
 
 const apiUrl = '/api/pan';
 
-// 使用 CORS 代理
-const CORS_PROXY = 'https://cors-anywhere.herokuapp.com/';
-const API_URL = 'http://demo1.w258.cn/2024/xlr/pan.php';
-// const apiUrl = `${CORS_PROXY}${API_URL}`;
-
 const gongPositions = ["大安", "留连", "速喜", "赤口", "小吉", "空亡"];
 
 export interface GongInfo {
@@ -66,7 +61,13 @@ export async function getDivinationInfo(number: string, time?: string): Promise<
         
         console.log('Request params:', params);
 
-        const response = await axios.get(apiUrl, { params });
+        // 直接访问原始 API
+        const response = await axios.get('http://demo1.w258.cn/2024/xlr/pan.php', { 
+            params,
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
 
         console.log('API Response:', response);
 
@@ -76,12 +77,18 @@ export async function getDivinationInfo(number: string, time?: string): Promise<
         }
 
         const apiResponse = response.data;
-        if (!apiResponse) {
-            console.error('Empty API response data');
-            throw new Error('API 返回数据为空');
-        }
+        console.log('Raw API response:', apiResponse);
 
-        console.log('Processed API response:', apiResponse);
+        if (typeof apiResponse === 'string') {
+            try {
+                const parsedResponse = JSON.parse(apiResponse);
+                console.log('Parsed API response:', parsedResponse);
+                apiResponse = parsedResponse;
+            } catch (e) {
+                console.error('Failed to parse API response:', e);
+                throw new Error('API 返回格式错误');
+            }
+        }
 
         const formattedDateTime = formatDateTime(dateTime);
         
@@ -95,58 +102,6 @@ export async function getDivinationInfo(number: string, time?: string): Promise<
             hour: dateTime.hour
         }, number);
 
-        // 构建宫位信息
-        const gongInfo: GongCollection = {
-            gong1: {
-                position: gongPositions[0],
-                god: apiResponse[0].liushen[0],
-                relation: apiResponse.shigong === 1 ? apiResponse[0].zishen : apiResponse[0].liuqin[0],
-                star: apiResponse[0].wuxing[0],
-                branch: apiResponse[0].dizhis[0],
-                number: "1"
-            },
-            gong2: {
-                position: gongPositions[1],
-                god: apiResponse[0].liushen[1],
-                relation: apiResponse.shigong === 2 ? apiResponse[0].zishen : apiResponse[0].liuqin[1],
-                star: apiResponse[0].wuxing[1],
-                branch: apiResponse[0].dizhis[1],
-                number: "2"
-            },
-            gong3: {
-                position: gongPositions[2],
-                god: apiResponse[0].liushen[2],
-                relation: apiResponse.shigong === 3 ? apiResponse[0].zishen : apiResponse[0].liuqin[2],
-                star: apiResponse[0].wuxing[2],
-                branch: apiResponse[0].dizhis[2],
-                number: "3"
-            },
-            gong4: {
-                position: gongPositions[3],
-                god: apiResponse[0].liushen[3],
-                relation: apiResponse.shigong === 4 ? apiResponse[0].zishen : apiResponse[0].liuqin[3],
-                star: apiResponse[0].wuxing[3],
-                branch: apiResponse[0].dizhis[3],
-                number: "4"
-            },
-            gong5: {
-                position: gongPositions[4],
-                god: apiResponse[0].liushen[4],
-                relation: apiResponse.shigong === 5 ? apiResponse[0].zishen : apiResponse[0].liuqin[4],
-                star: apiResponse[0].wuxing[4],
-                branch: apiResponse[0].dizhis[4],
-                number: "5"
-            },
-            gong6: {
-                position: gongPositions[5],
-                god: apiResponse[0].liushen[5],
-                relation: apiResponse.shigong === 6 ? apiResponse[0].zishen : apiResponse[0].liuqin[5],
-                star: apiResponse[0].wuxing[5],
-                branch: apiResponse[0].dizhis[5],
-                number: "6"
-            }
-        };
-
         return {
             code: 0,
             data: {
@@ -155,20 +110,26 @@ export async function getDivinationInfo(number: string, time?: string): Promise<
                 yangli_time: formattedDateTime,
                 time_palace: timePalacePosition,
                 day_palace: dayPalacePosition,
-                gong_info: gongInfo,
+                gong_info: {
+                    gong1: { position: "大安", god: "", relation: "", star: "", branch: "", number: "1" },
+                    gong2: { position: "留连", god: "", relation: "", star: "", branch: "", number: "2" },
+                    gong3: { position: "速喜", god: "", relation: "", star: "", branch: "", number: "3" },
+                    gong4: { position: "赤口", god: "", relation: "", star: "", branch: "", number: "4" },
+                    gong5: { position: "小吉", god: "", relation: "", star: "", branch: "", number: "5" },
+                    gong6: { position: "空亡", god: "", relation: "", star: "", branch: "", number: "6" }
+                },
                 debug_info: {
                     api_response: apiResponse,
-                    shichen,
+                    shichen: shichen,
                     input_hour: dateTime.hour,
                     gongInfoArray: []
                 }
             }
         };
-
     } catch (error) {
         console.error('Error in getDivinationInfo:', error);
         return {
-            code: 500,
+            code: -1,
             data: null
         };
     }
