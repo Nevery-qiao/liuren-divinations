@@ -6,7 +6,7 @@ const apiUrl = '/api/pan';
 // 使用 CORS 代理
 const CORS_PROXY = 'https://cors-anywhere.herokuapp.com/';
 const API_URL = 'http://demo1.w258.cn/2024/xlr/pan.php';
-const apiUrl = `${CORS_PROXY}${API_URL}`;
+// const apiUrl = `${CORS_PROXY}${API_URL}`;
 
 const gongPositions = ["大安", "留连", "速喜", "赤口", "小吉", "空亡"];
 
