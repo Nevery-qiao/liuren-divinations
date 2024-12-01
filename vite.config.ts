@@ -5,6 +5,19 @@ import vue from '@vitejs/plugin-vue'
 export default defineConfig({
   base: '/liuren/',
   plugins: [vue()],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor': ['vue', 'vue-router'],
+          'lunar': ['lunar-typescript']
+        }
+      }
+    },
+    assetsDir: 'assets',
+    minify: 'terser',
+    sourcemap: false
+  },
   server: {
     proxy: {
       '/api/proxy': {
