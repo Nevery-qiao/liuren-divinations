@@ -59,16 +59,14 @@ export async function getDivinationInfo(number: string, time?: string): Promise<
         const shichen = getShichen(dateTime.hour);
         console.log('Processed datetime:', { dateTime, shichen });
 
-        const params = new URLSearchParams();
-        params.append('ri', number);
-        params.append('shi', shichen.toString());
-        console.log('Request params:', params.toString());
+        const params = {
+            ri: number,
+            shi: shichen.toString()
+        };
+        
+        console.log('Request params:', params);
 
-        const response = await axios.post(apiUrl, params, {
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            }
-        });
+        const response = await axios.get(apiUrl, { params });
 
         console.log('API Response:', response);
 
