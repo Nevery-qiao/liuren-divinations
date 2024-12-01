@@ -29,11 +29,15 @@ const showDrawer = ref(false)
 
 const handleNewDivination = async (data: { number: number; time: string; question?: string }) => {
   try {
+    console.log('New divination:', data);
+    console.log('Creating date with:', { number: data.number, time: data.time });
+    console.log('Getting divination for:', { number: data.number, time: data.time });
+
     // 先获取占卜结果
     const result = await getDivinationInfo({
-      number: data.number,
+      number: data.number.toString(),
       time: data.time
-    })
+    });
     
     if (result.code === 0 && result.data) {
       // 创建历史记录

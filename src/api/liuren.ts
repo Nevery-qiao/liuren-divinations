@@ -93,6 +93,77 @@ function jsonp(url: string, timeout = 5000): Promise<any> {
   });
 }
 
+// 计算时辰
+function getShichen(hour: number): number {
+  // 子时 23:00-1:00 = 1
+  // 丑时 1:00-3:00 = 2
+  // 寅时 3:00-5:00 = 3
+  // 卯时 5:00-7:00 = 4
+  // 辰时 7:00-9:00 = 5
+  // 巳时 9:00-11:00 = 6
+  // 午时 11:00-13:00 = 7
+  // 未时 13:00-15:00 = 8
+  // 申时 15:00-17:00 = 9
+  // 酉时 17:00-19:00 = 10
+  // 戌时 19:00-21:00 = 11
+  // 亥时 21:00-23:00 = 12
+  
+  if (hour >= 23 || hour < 1) return 1;  // 子时
+  if (hour >= 1 && hour < 3) return 2;   // 丑时
+  if (hour >= 3 && hour < 5) return 3;   // 寅时
+  if (hour >= 5 && hour < 7) return 4;   // 卯时
+  if (hour >= 7 && hour < 9) return 5;   // 辰时
+  if (hour >= 9 && hour < 11) return 6;  // 巳时
+  if (hour >= 11 && hour < 13) return 7; // 午时
+  if (hour >= 13 && hour < 15) return 8; // 未时
+  if (hour >= 15 && hour < 17) return 9; // 申时
+  if (hour >= 17 && hour < 19) return 10;// 酉时
+  if (hour >= 19 && hour < 21) return 11;// 戌时
+  return 12; // 亥时 (21:00-23:00)
+}
+
+// 解析日期时间
+export function parseDateTime(timeStr: string | undefined): { dateTime: { year: number; month: number; day: number; hour: number; minute: number }; shichen: number } {
+  if (!timeStr) {
+    throw new Error('时间不能为空');
+  }
+
+  console.log('parseDateTime input:', timeStr);
+  
+  // 处理时间字符串
+  const processedTimeStr = timeStr.trim();
+  console.log('Processed time string:', processedTimeStr);
+  
+  // 处理带空格的时间
+  console.log('Processing time with space');
+  const [datePart, timePart] = processedTimeStr.split(' ');
+  console.log('Date part:', datePart, 'Time part:', timePart);
+  
+  // 完整日期格式 (YYYY-MM-DD)
+  console.log('Full date format (YYYY-MM-DD)');
+  const [year, month, day] = datePart.split('-').map(Number);
+  const [hour, minute] = timePart.split(':').map(Number);
+  
+  const dateTime = {
+    year,
+    month,
+    day,
+    hour,
+    minute
+  };
+  
+  console.log('Parsed components:', dateTime);
+  
+  const shichen = getShichen(hour);
+  console.log('Calculated shichen:', shichen);
+  
+  return {
+    dateTime,
+    shichen
+  };
+}
+
+// 获取占卜信息
 export async function getDivinationInfo(params: DivinationParams): Promise<DivinationResult> {
   console.log('Starting getDivinationInfo with:', params);
   
@@ -143,7 +214,7 @@ export async function getDivinationInfo(params: DivinationParams): Promise<Divin
       data: {
         divination_number: params.number,
         lunar_time: apiResponse.lunar_time || '',
-        yangli_time: formatDateTime(dateTime),
+        yangli_time: `${dateTime.year}-${dateTime.month.toString().padStart(2, '0')}-${dateTime.day.toString().padStart(2, '0')} ${dateTime.hour.toString().padStart(2, '0')}:${dateTime.minute.toString().padStart(2, '0')}`,
         time_palace: apiResponse.time_palace || '',
         day_palace: apiResponse.day_palace || '',
         gong_info: apiResponse.gong_info || {
@@ -156,7 +227,7 @@ export async function getDivinationInfo(params: DivinationParams): Promise<Divin
         },
         debug_info: {
           api_response: apiResponse,
-          shichen: shichen,
+          shichen,
           input_hour: dateTime.hour,
           gongInfoArray: []
         }
@@ -172,140 +243,8 @@ export async function getDivinationInfo(params: DivinationParams): Promise<Divin
   }
 }
 
-function parseDateTime(time: string | undefined): { year: number; month: number; day: number; hour: number; minute: number } {
-    console.log('parseDateTime input:', time);
-
-    if (!time) {
-        console.log('No time provided, using current time');
-        const now = new Date();
-        return {
-            year: now.getFullYear(),
-            month: now.getMonth() + 1,
-            day: now.getDate(),
-            hour: now.getHours(),
-            minute: now.getMinutes()
-        };
-    }
-
-    time = time.replace(/：/g, ':').trim();
-    console.log('Processed time string:', time);
-
-    try {
-        if (time.includes(' ')) {
-            console.log('Processing time with space');
-            const [dateStr, timeStr] = time.split(' ');
-            console.log('Date part:', dateStr, 'Time part:', timeStr);
-            
-            let year: number, month: number, day: number;
-
-            if (dateStr.split('-').length === 3) {
-                console.log('Full date format (YYYY-MM-DD)');
-                [year, month, day] = dateStr.split('-').map(Number);
-            } else if (dateStr.split('-').length === 2) {
-                console.log('Short date format (MM-DD)');
-                [month, day] = dateStr.split('-').map(Number);
-                year = new Date().getFullYear();
-                console.log('Using current year:', year);
-            } else {
-                console.log('Invalid date format:', dateStr);
-                throw new Error('Invalid date format');
-            }
-
-            const [hour, minute] = timeStr.split(':').map(Number);
-            console.log('Parsed components:', { year, month, day, hour, minute });
-            
-            if ([year, month, day, hour, minute].some(isNaN)) {
-                console.log('Some components are NaN:', { year, month, day, hour, minute });
-                throw new Error('Invalid date/time components');
-            }
-            
-            if (month < 1 || month > 12 || day < 1 || day > 31 || 
-                hour < 0 || hour > 23 || minute < 0 || minute > 59) {
-                console.log('Components out of range:', { year, month, day, hour, minute });
-                throw new Error('Date/time values out of range');
-            }
-            
-            return {
-                year,
-                month,
-                day,
-                hour,
-                minute
-            };
-        } else if (time.includes('-')) {
-            console.log('Processing time with hyphens only');
-            const [year, month, day, timeStr] = time.split('-');
-            const [hour, minute] = timeStr ? timeStr.split(':').map(Number) : [0, 0];
-            
-            const parsedYear = parseInt(year);
-            const parsedMonth = parseInt(month);
-            const parsedDay = parseInt(day);
-            
-            if ([parsedYear, parsedMonth, parsedDay, hour, minute].some(isNaN)) {
-                throw new Error('Invalid date/time components');
-            }
-            
-            if (parsedMonth < 1 || parsedMonth > 12 || parsedDay < 1 || parsedDay > 31 || 
-                hour < 0 || hour > 23 || minute < 0 || minute > 59) {
-                throw new Error('Date/time values out of range');
-            }
-            
-            return {
-                year: parsedYear,
-                month: parsedMonth,
-                day: parsedDay,
-                hour,
-                minute
-            };
-        } else {
-            console.log('Processing time only format');
-            const now = new Date();
-            const [hour, minute] = time.split(':').map(Number);
-            
-            if ([hour, minute].some(isNaN) || hour < 0 || hour > 23 || minute < 0 || minute > 59) {
-                throw new Error('Invalid time format');
-            }
-            
-            return {
-                year: now.getFullYear(),
-                month: now.getMonth() + 1,
-                day: now.getDate(),
-                hour,
-                minute
-            };
-        }
-    } catch (error) {
-        console.error('Error parsing datetime:', error);
-        throw new Error('时间格式不正确');
-    }
-}
-
-function formatDateTime(date: { year: number; month: number; day: number; hour: number; minute: number }): string {
-    const month = date.month.toString().padStart(2, '0');
-    const day = date.day.toString().padStart(2, '0');
-    const hour = date.hour.toString().padStart(2, '0');
-    const minute = date.minute.toString().padStart(2, '0');
-    return `${date.year}年${month}月${day}日 ${hour}:${minute}`;
-}
-
-function getShichen(hour: number): number {
-    if (hour >= 23 || hour < 1) return 1;
-    if (hour >= 1 && hour < 3) return 2;
-    if (hour >= 3 && hour < 5) return 3;
-    if (hour >= 5 && hour < 7) return 4;
-    if (hour >= 7 && hour < 9) return 5;
-    if (hour >= 9 && hour < 11) return 6;
-    if (hour >= 11 && hour < 13) return 7;
-    if (hour >= 13 && hour < 15) return 8;
-    if (hour >= 15 && hour < 17) return 9;
-    if (hour >= 17 && hour < 19) return 10;
-    if (hour >= 19 && hour < 21) return 11;
-    return 12;
-}
-
-function getLunarInfo(dateTime: { year: number; month: number; day: number; hour: number }, divination_number: string) {
-    const date = new Date(dateTime.year, dateTime.month - 1, dateTime.day, dateTime.hour);
-    const lunar = Lunar.fromDate(date);
-    
-    return `${lunar.getYearInGanZhi()}年  ${lunar.getMonthInGanZhi()}月  ${lunar.getDayInGanZhi()}日  ${lunar.getTimeInGanZhi()}时 【数字：${divination_number}】`;
+// 格式化日期时间
+function formatDateTime(dateTime: { year: number; month: number; day: number; hour: number; minute: number }): string {
+  const { year, month, day, hour, minute } = dateTime;
+  return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')} ${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
 }
