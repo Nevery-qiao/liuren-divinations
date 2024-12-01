@@ -20,13 +20,36 @@ import { useHistoryStore } from '../stores/history'
 import NewDivinationInput from '../components/NewDivinationInput.vue'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import type { DivinationHistory } from '../types/divination'
+import { getDivinationInfo } from '../api/liuren'
+import { ElMessage } from 'element-plus'
+import { v4 as uuidv4 } from 'uuid'
 
 const router = useRouter()
 const historyStore = useHistoryStore()
 
-const handleSubmit = (history: DivinationHistory) => {
-  historyStore.addHistory(history)
-  router.push(`/mobile/divination/${history.id}`)
+const handleSubmit = async (data: { number: number; time: string }) => {
+  console.log('Creating divination with:', data);
+  try {
+    const result = await getDivinationInfo({
+      number: data.number,
+      time: data.time
+    });
+
+    const history: DivinationHistory = {
+      id: uuidv4(),
+      time: new Date().toISOString(),
+      timestamp: Date.now(),
+      question: '',
+      result,
+      number: data.number,
+    };
+
+    historyStore.addHistory(history);
+    router.push(`/mobile/divination/${history.id}`);
+  } catch (error) {
+    console.error('Error creating divination:', error);
+    ElMessage.error('创建占卜失败，请重试');
+  }
 }
 </script>
 
