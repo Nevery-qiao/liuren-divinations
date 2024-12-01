@@ -169,7 +169,8 @@ export async function getDivinationInfo(params: DivinationParams): Promise<Divin
   
   try {
     // 验证参数
-    if (!params.number || !params.time) {
+    if (!params || !params.number || !params.time) {
+      console.error('Missing required parameters:', params);
       throw new Error('缺少必要参数');
     }
 
@@ -180,6 +181,7 @@ export async function getDivinationInfo(params: DivinationParams): Promise<Divin
     }
 
     const { dateTime, shichen } = parseDateTime(params.time);
+    console.log('Parsed date time:', dateTime, 'shichen:', shichen);
     
     // 构建请求参数
     const requestParams = {
@@ -214,7 +216,7 @@ export async function getDivinationInfo(params: DivinationParams): Promise<Divin
       data: {
         divination_number: params.number,
         lunar_time: apiResponse.lunar_time || '',
-        yangli_time: `${dateTime.year}-${dateTime.month.toString().padStart(2, '0')}-${dateTime.day.toString().padStart(2, '0')} ${dateTime.hour.toString().padStart(2, '0')}:${dateTime.minute.toString().padStart(2, '0')}`,
+        yangli_time: formatDateTime(dateTime),
         time_palace: apiResponse.time_palace || '',
         day_palace: apiResponse.day_palace || '',
         gong_info: apiResponse.gong_info || {
