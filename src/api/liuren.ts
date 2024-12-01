@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { Lunar } from 'lunar-typescript';
 
-const apiUrl = 'http://demo1.w258.cn/2024/xlr/pan.php';
+const apiUrl = 'https://demo1.w258.cn/2024/xlr/pan.php';
 
 export interface GongInfo {
     position: string;    // 宫位名称
