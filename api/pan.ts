@@ -10,7 +10,7 @@ export default async function handler(
   // 允许跨域请求
   response.setHeader('Access-Control-Allow-Credentials', 'true');
   response.setHeader('Access-Control-Allow-Origin', '*');
-  response.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  response.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
   response.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   // 处理 OPTIONS 请求
@@ -19,29 +19,28 @@ export default async function handler(
   }
 
   try {
-    console.log('API request received:', request.body);
+    console.log('API request received:', { 
+      method: request.method,
+      query: request.query,
+      body: request.body 
+    });
 
-    if (request.method !== 'POST') {
+    if (request.method !== 'GET') {
       console.log('Invalid method:', request.method);
       return response.status(405).json({ error: 'Method not allowed' });
     }
 
-    const { ri, shi } = request.body;
+    const { ri, shi } = request.query;
     if (!ri || !shi) {
-      console.log('Missing parameters:', request.body);
+      console.log('Missing parameters:', request.query);
       return response.status(400).json({ error: 'Missing required parameters' });
     }
 
     console.log('Sending request to API:', { ri, shi });
 
-    const apiResponse = await axios.post(API_URL, 
-      new URLSearchParams({ ri, shi }).toString(),
-      {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      }
-    );
+    const apiResponse = await axios.get(API_URL, {
+      params: { ri, shi }
+    });
 
     console.log('API response:', apiResponse.data);
 
