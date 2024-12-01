@@ -1,12 +1,14 @@
 <template>
   <div class="app-container">
     <router-view />
+    <LogViewer />
   </div>
 </template>
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { onMounted, onUnmounted } from 'vue'
+import LogViewer from './components/LogViewer.vue';
 
 const router = useRouter()
 
