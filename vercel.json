@@ -15,6 +15,18 @@
       "destination": "https://demo1.w258.cn/2024/xlr/pan.php"
     },
     {
+      "source": "/liuren/assets/:path*",
+      "destination": "/assets/:path*"
+    },
+    {
+      "source": "/liuren/:path*.js",
+      "destination": "/:path*.js"
+    },
+    {
+      "source": "/liuren/:path*.css",
+      "destination": "/:path*.css"
+    },
+    {
       "source": "/liuren/(.*)",
       "destination": "/index.html"
     }
