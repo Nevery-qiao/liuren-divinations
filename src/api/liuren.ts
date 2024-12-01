@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { Lunar } from 'lunar-typescript';
 
-const apiUrl = '/api/pan';
+// 使用 HTTPS API URL
+const API_URL = 'https://demo1.w258.cn/2024/xlr/pan.php';
 
 const gongPositions = ["大安", "留连", "速喜", "赤口", "小吉", "空亡"];
 
@@ -61,72 +62,92 @@ export async function getDivinationInfo(number: string, time?: string): Promise<
         
         console.log('Request params:', params);
 
-        // 直接访问原始 API
-        const response = await axios.get('http://demo1.w258.cn/2024/xlr/pan.php', { 
-            params,
-            headers: {
-                'Accept': 'application/json'
-            }
-        });
-
-        console.log('API Response:', response);
-
-        if (!response.data) {
-            console.error('Empty response data');
-            throw new Error('API 返回为空');
-        }
-
-        const apiResponse = response.data;
-        console.log('Raw API response:', apiResponse);
-
-        if (typeof apiResponse === 'string') {
-            try {
-                const parsedResponse = JSON.parse(apiResponse);
-                console.log('Parsed API response:', parsedResponse);
-                apiResponse = parsedResponse;
-            } catch (e) {
-                console.error('Failed to parse API response:', e);
-                throw new Error('API 返回格式错误');
-            }
-        }
-
-        const formattedDateTime = formatDateTime(dateTime);
-        
-        const timePalacePosition = gongPositions[apiResponse.shigong - 1];
-        const dayPalacePosition = gongPositions[apiResponse.rigong - 1];
-
-        const lunarInfo = getLunarInfo({
-            year: dateTime.year,
-            month: dateTime.month,
-            day: dateTime.day,
-            hour: dateTime.hour
-        }, number);
-
-        return {
-            code: 0,
-            data: {
-                divination_number: number,
-                lunar_time: lunarInfo,
-                yangli_time: formattedDateTime,
-                time_palace: timePalacePosition,
-                day_palace: dayPalacePosition,
-                gong_info: {
-                    gong1: { position: "大安", god: "", relation: "", star: "", branch: "", number: "1" },
-                    gong2: { position: "留连", god: "", relation: "", star: "", branch: "", number: "2" },
-                    gong3: { position: "速喜", god: "", relation: "", star: "", branch: "", number: "3" },
-                    gong4: { position: "赤口", god: "", relation: "", star: "", branch: "", number: "4" },
-                    gong5: { position: "小吉", god: "", relation: "", star: "", branch: "", number: "5" },
-                    gong6: { position: "空亡", god: "", relation: "", star: "", branch: "", number: "6" }
+        // 尝试直接访问 HTTPS API
+        try {
+            const response = await axios.get(API_URL, { 
+                params,
+                headers: {
+                    'Accept': 'application/json'
                 },
-                debug_info: {
-                    api_response: apiResponse,
-                    shichen: shichen,
-                    input_hour: dateTime.hour,
-                    gongInfoArray: []
+                timeout: 5000 // 5秒超时
+            });
+
+            console.log('API Response:', response);
+
+            if (!response.data) {
+                console.error('Empty response data');
+                throw new Error('API 返回为空');
+            }
+
+            const apiResponse = response.data;
+            console.log('Raw API response:', apiResponse);
+
+            if (typeof apiResponse === 'string') {
+                try {
+                    const parsedResponse = JSON.parse(apiResponse);
+                    console.log('Parsed API response:', parsedResponse);
+                    return {
+                        code: 0,
+                        data: {
+                            divination_number: number,
+                            lunar_time: parsedResponse.lunar_time || '',
+                            yangli_time: formatDateTime(dateTime),
+                            time_palace: parsedResponse.time_palace || '',
+                            day_palace: parsedResponse.day_palace || '',
+                            gong_info: parsedResponse.gong_info || {
+                                gong1: { position: "大安", god: "", relation: "", star: "", branch: "", number: "1" },
+                                gong2: { position: "留连", god: "", relation: "", star: "", branch: "", number: "2" },
+                                gong3: { position: "速喜", god: "", relation: "", star: "", branch: "", number: "3" },
+                                gong4: { position: "赤口", god: "", relation: "", star: "", branch: "", number: "4" },
+                                gong5: { position: "小吉", god: "", relation: "", star: "", branch: "", number: "5" },
+                                gong6: { position: "空亡", god: "", relation: "", star: "", branch: "", number: "6" }
+                            },
+                            debug_info: {
+                                api_response: parsedResponse,
+                                shichen: shichen,
+                                input_hour: dateTime.hour,
+                                gongInfoArray: []
+                            }
+                        }
+                    };
+                } catch (e) {
+                    console.error('Failed to parse API response:', e);
+                    throw new Error('API 返回格式错误');
                 }
             }
-        };
-    } catch (error) {
+
+            return {
+                code: 0,
+                data: {
+                    divination_number: number,
+                    lunar_time: apiResponse.lunar_time || '',
+                    yangli_time: formatDateTime(dateTime),
+                    time_palace: apiResponse.time_palace || '',
+                    day_palace: apiResponse.day_palace || '',
+                    gong_info: apiResponse.gong_info || {
+                        gong1: { position: "大安", god: "", relation: "", star: "", branch: "", number: "1" },
+                        gong2: { position: "留连", god: "", relation: "", star: "", branch: "", number: "2" },
+                        gong3: { position: "速喜", god: "", relation: "", star: "", branch: "", number: "3" },
+                        gong4: { position: "赤口", god: "", relation: "", star: "", branch: "", number: "4" },
+                        gong5: { position: "小吉", god: "", relation: "", star: "", branch: "", number: "5" },
+                        gong6: { position: "空亡", god: "", relation: "", star: "", branch: "", number: "6" }
+                    },
+                    debug_info: {
+                        api_response: apiResponse,
+                        shichen: shichen,
+                        input_hour: dateTime.hour,
+                        gongInfoArray: []
+                    }
+                }
+            };
+        } catch (error: any) {
+            console.error('API request failed:', error);
+            if (error.code === 'ERR_NETWORK') {
+                throw new Error('网络错误，请检查网络连接');
+            }
+            throw error;
+        }
+    } catch (error: any) {
         console.error('Error in getDivinationInfo:', error);
         return {
             code: -1,
