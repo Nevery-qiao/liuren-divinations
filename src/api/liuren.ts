@@ -94,106 +94,82 @@ function jsonp(url: string, timeout = 5000): Promise<any> {
 }
 
 export async function getDivinationInfo(params: DivinationParams): Promise<DivinationResult> {
-    try {
-        console.log('Starting getDivinationInfo with:', params);
-        
-        if (!Number.isInteger(Number(params.number))) {
-            throw new Error('占数必须是整数');
-        }
-
-        const dateTime = parseDateTime(params.time);
-        const shichen = getShichen(dateTime.hour);
-        console.log('Processed datetime:', { dateTime, shichen });
-
-        const requestParams = {
-            ri: params.number,
-            shi: shichen.toString()
-        };
-        
-        console.log('Request params:', requestParams);
-
-        // 使用代理服务器请求
-        const response = await axios.get(API_URL, {
-            params: requestParams,
-            timeout: 5000,
-            headers: {
-                'Accept': 'application/json'
-            }
-        });
-        
-        if (!response.data || response.data.code === -1) {
-            throw new Error(response.data?.msg || '获取数据失败');
-        }
-        
-        const apiResponse = response.data;
-        console.log('Raw API response:', apiResponse);
-
-        if (typeof apiResponse === 'string') {
-            try {
-                const parsedResponse = JSON.parse(apiResponse);
-                console.log('Parsed API response:', parsedResponse);
-                return {
-                    code: 0,
-                    data: {
-                        divination_number: params.number,
-                        lunar_time: parsedResponse.lunar_time || '',
-                        yangli_time: formatDateTime(dateTime),
-                        time_palace: parsedResponse.time_palace || '',
-                        day_palace: parsedResponse.day_palace || '',
-                        gong_info: parsedResponse.gong_info || {
-                            gong1: { position: "大安", god: "", relation: "", star: "", branch: "", number: "1" },
-                            gong2: { position: "留连", god: "", relation: "", star: "", branch: "", number: "2" },
-                            gong3: { position: "速喜", god: "", relation: "", star: "", branch: "", number: "3" },
-                            gong4: { position: "赤口", god: "", relation: "", star: "", branch: "", number: "4" },
-                            gong5: { position: "小吉", god: "", relation: "", star: "", branch: "", number: "5" },
-                            gong6: { position: "空亡", god: "", relation: "", star: "", branch: "", number: "6" }
-                        },
-                        debug_info: {
-                            api_response: parsedResponse,
-                            shichen: shichen,
-                            input_hour: dateTime.hour,
-                            gongInfoArray: []
-                        }
-                    }
-                };
-            } catch (e) {
-                console.error('Failed to parse API response:', e);
-                throw new Error('API 返回格式错误');
-            }
-        }
-
-        return {
-            code: 0,
-            data: {
-                divination_number: params.number,
-                lunar_time: apiResponse.lunar_time || '',
-                yangli_time: formatDateTime(dateTime),
-                time_palace: apiResponse.time_palace || '',
-                day_palace: apiResponse.day_palace || '',
-                gong_info: apiResponse.gong_info || {
-                    gong1: { position: "大安", god: "", relation: "", star: "", branch: "", number: "1" },
-                    gong2: { position: "留连", god: "", relation: "", star: "", branch: "", number: "2" },
-                    gong3: { position: "速喜", god: "", relation: "", star: "", branch: "", number: "3" },
-                    gong4: { position: "赤口", god: "", relation: "", star: "", branch: "", number: "4" },
-                    gong5: { position: "小吉", god: "", relation: "", star: "", branch: "", number: "5" },
-                    gong6: { position: "空亡", god: "", relation: "", star: "", branch: "", number: "6" }
-                },
-                debug_info: {
-                    api_response: apiResponse,
-                    shichen: shichen,
-                    input_hour: dateTime.hour,
-                    gongInfoArray: []
-                }
-            }
-        };
-    } catch (error: any) {
-        console.error('Error in getDivinationInfo:', error);
-        return {
-            code: -1,
-            data: null,
-            msg: error.message || '网络错误，请检查网络连接'
-        };
+  console.log('Starting getDivinationInfo with:', params);
+  
+  try {
+    // 验证参数
+    if (!params.number || !params.time) {
+      throw new Error('缺少必要参数');
     }
+
+    // 验证数字格式
+    const number = Number(params.number);
+    if (!Number.isInteger(number) || number < 1 || number > 100) {
+      throw new Error('占数必须是 1-100 之间的整数');
+    }
+
+    const { dateTime, shichen } = parseDateTime(params.time);
+    
+    // 构建请求参数
+    const requestParams = {
+      ri: number.toString(),
+      shi: shichen.toString()
+    };
+    
+    console.log('Request params:', requestParams);
+
+    // 使用代理服务器请求
+    const response = await axios.get(API_URL, {
+      params: requestParams,
+      timeout: 5000,
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+
+    if (!response.data) {
+      throw new Error('获取数据失败');
+    }
+
+    if (response.data.code === -1) {
+      throw new Error(response.data.msg || '获取数据失败');
+    }
+
+    const apiResponse = response.data;
+    console.log('API Response:', apiResponse);
+
+    return {
+      code: 0,
+      data: {
+        divination_number: params.number,
+        lunar_time: apiResponse.lunar_time || '',
+        yangli_time: formatDateTime(dateTime),
+        time_palace: apiResponse.time_palace || '',
+        day_palace: apiResponse.day_palace || '',
+        gong_info: apiResponse.gong_info || {
+          gong1: { position: "大安", god: "", relation: "", star: "", branch: "", number: "1" },
+          gong2: { position: "留连", god: "", relation: "", star: "", branch: "", number: "2" },
+          gong3: { position: "速喜", god: "", relation: "", star: "", branch: "", number: "3" },
+          gong4: { position: "赤口", god: "", relation: "", star: "", branch: "", number: "4" },
+          gong5: { position: "小吉", god: "", relation: "", star: "", branch: "", number: "5" },
+          gong6: { position: "空亡", god: "", relation: "", star: "", branch: "", number: "6" }
+        },
+        debug_info: {
+          api_response: apiResponse,
+          shichen: shichen,
+          input_hour: dateTime.hour,
+          gongInfoArray: []
+        }
+      }
+    };
+  } catch (error: any) {
+    console.error('Error in getDivinationInfo:', error);
+    return {
+      code: -1,
+      data: null,
+      msg: error.response?.data?.msg || error.message || '网络错误，请检查网络连接'
+    };
+  }
 }
 
 function parseDateTime(time: string | undefined): { year: number; month: number; day: number; hour: number; minute: number } {
