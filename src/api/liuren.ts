@@ -4,9 +4,9 @@ import { Lunar } from 'lunar-typescript';
 const apiUrl = '/api/pan';
 
 // 使用 CORS 代理
-// const CORS_PROXY = 'https://cors-anywhere.herokuapp.com/';
-// const API_URL = 'http://demo1.w258.cn/2024/xlr/pan.php';
-// const apiUrl = `${CORS_PROXY}${API_URL}`;
+const CORS_PROXY = 'https://cors-anywhere.herokuapp.com/';
+const API_URL = 'http://demo1.w258.cn/2024/xlr/pan.php';
+const apiUrl = `${CORS_PROXY}${API_URL}`;
 
 const gongPositions = ["大安", "留连", "速喜", "赤口", "小吉", "空亡"];
 
@@ -59,16 +59,15 @@ export async function getDivinationInfo(number: string, time?: string): Promise<
         const shichen = getShichen(dateTime.hour);
         console.log('Processed datetime:', { dateTime, shichen });
 
-        // 构建请求参数
-        // const params = new URLSearchParams();
-        // params.append('ri', number);
-        // params.append('shi', shichen.toString());
-        // console.log('Request params:', params.toString());
-        // console.log('Request URL:', apiUrl);
+        const params = new URLSearchParams();
+        params.append('ri', number);
+        params.append('shi', shichen.toString());
+        console.log('Request params:', params.toString());
 
-        const response = await axios.post(apiUrl, {
-            ri: number,
-            shi: shichen.toString()
+        const response = await axios.post(apiUrl, params, {
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
         });
 
         console.log('API Response:', response);
@@ -78,12 +77,7 @@ export async function getDivinationInfo(number: string, time?: string): Promise<
             throw new Error('API 返回为空');
         }
 
-        if (response.data.code !== 200) {
-            console.error('API error response:', response.data);
-            throw new Error(`API 返回错误: ${response.data.message || '未知错误'}`);
-        }
-
-        const apiResponse = response.data.data;
+        const apiResponse = response.data;
         if (!apiResponse) {
             console.error('Empty API response data');
             throw new Error('API 返回数据为空');
