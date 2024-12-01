@@ -15,6 +15,16 @@ const apiClient = axios.create({
 
 // 添加请求拦截器，处理 CORS
 apiClient.interceptors.request.use((config) => {
+    console.log('Request interceptor:', {
+        url: config.url,
+        method: config.method,
+        headers: config.headers,
+        params: config.params,
+        data: config.data,
+        baseURL: config.baseURL,
+        env: process.env.NODE_ENV
+    });
+
     // 开发环境下添加特殊处理
     if (process.env.NODE_ENV === 'development') {
         config.headers['X-Requested-With'] = 'XMLHttpRequest';
@@ -22,6 +32,37 @@ apiClient.interceptors.request.use((config) => {
     return config;
 });
 
+// 添加响应拦截器
+apiClient.interceptors.response.use(
+    (response) => {
+        console.log('Response interceptor success:', {
+            status: response.status,
+            statusText: response.statusText,
+            headers: response.headers,
+            config: {
+                url: response.config.url,
+                method: response.config.method,
+                params: response.config.params
+            }
+        });
+        return response;
+    },
+    (error) => {
+        console.error('Response interceptor error:', {
+            message: error.message,
+            config: error.config,
+            response: error.response ? {
+                status: error.response.status,
+                statusText: error.response.statusText,
+                headers: error.response.headers,
+                data: error.response.data
+            } : null
+        });
+        return Promise.reject(error);
+    }
+);
+
+// 使用宫位名称数组
 const gongPositions = ["大安", "留连", "速喜", "赤口", "小吉", "空亡"];
 
 export interface GongInfo {
@@ -136,16 +177,38 @@ export interface DivinationResult {
 }
 
 export async function getDivinationInfo(params: DivinationParams): Promise<DivinationResult> {
-    console.log('Starting getDivinationInfo with:', params);
+    console.log('Starting getDivinationInfo with:', {
+        params,
+        numberType: typeof params.number,
+        numberValue: params.number,
+        timeType: typeof params.time,
+        timeValue: params.time
+    });
     
     try {
         // 验证参数
         if (!params.number) {
+            console.error('Validation failed: number is empty or invalid', {
+                number: params.number,
+                type: typeof params.number,
+                truthyCheck: !!params.number
+            });
             throw new Error('占数不能为空');
         }
 
         const { dateTime, shichen } = parseDateTime(params.time);
+        console.log('Parsed date time:', {
+            input: params.time,
+            parsed: dateTime,
+            shichen,
+        });
+
         const { number } = params;
+        console.log('Extracted number:', {
+            original: params.number,
+            extracted: number,
+            type: typeof number
+        });
 
         // 构建请求参数
         const requestParams = {
@@ -153,13 +216,23 @@ export async function getDivinationInfo(params: DivinationParams): Promise<Divin
             shi: shichen.toString()
         };
 
-        console.log('Request params:', requestParams);
+        console.log('Request configuration:', {
+            url: API_URL,
+            method: 'GET',
+            params: requestParams,
+            headers: apiClient.defaults.headers
+        });
 
         const response = await apiClient.get(API_URL, {
             params: requestParams
         });
 
-        console.log('API Response:', response);
+        console.log('API Response:', {
+            status: response.status,
+            statusText: response.statusText,
+            headers: response.headers,
+            data: response.data
+        });
 
         if (!response.data) {
             throw new Error('API 返回为空');
