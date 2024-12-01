@@ -10,10 +10,6 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      redirect: isMobileDevice() ? '/mobile' : '/desktop'
-    },
-    {
-      path: '/desktop',
       component: DesktopLayout
     },
     {

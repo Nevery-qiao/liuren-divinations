@@ -49,18 +49,26 @@ export async function getDivinationInfo(number: string, time?: string): Promise<
         const dateTime = parseDateTime(time);
         const shichen = getShichen(dateTime.hour);
 
-        const response = await axios.get(apiUrl, { 
+        // 构建请求参数
+        const params = new URLSearchParams();
+        params.append('ri', number);
+        params.append('shi', shichen.toString());
+
+        const response = await axios.post(apiUrl, params, {
             headers: {
-                'Accept': '*/*',
                 'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            params: {
-                ri: number,
-                shi: shichen
             }
         });
 
-        const apiResponse = response.data;
+        if (!response.data || response.data.code !== 200) {
+            throw new Error('API 返回错误');
+        }
+
+        const apiResponse = response.data.data;
+        if (!apiResponse) {
+            throw new Error('API 返回数据为空');
+        }
+
         const formattedDateTime = formatDateTime(dateTime);
         
         const gongPositions = ["大安", "留连", "速喜", "赤口", "小吉", "空亡"];
