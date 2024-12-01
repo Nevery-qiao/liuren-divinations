@@ -1,10 +1,12 @@
 import axios from 'axios';
 import { Lunar } from 'lunar-typescript';
 
+const apiUrl = '/api/pan';
+
 // 使用 CORS 代理
-const CORS_PROXY = 'https://cors-anywhere.herokuapp.com/';
-const API_URL = 'http://demo1.w258.cn/2024/xlr/pan.php';
-const apiUrl = `${CORS_PROXY}${API_URL}`;
+// const CORS_PROXY = 'https://cors-anywhere.herokuapp.com/';
+// const API_URL = 'http://demo1.w258.cn/2024/xlr/pan.php';
+// const apiUrl = `${CORS_PROXY}${API_URL}`;
 
 const gongPositions = ["大安", "留连", "速喜", "赤口", "小吉", "空亡"];
 
@@ -58,17 +60,15 @@ export async function getDivinationInfo(number: string, time?: string): Promise<
         console.log('Processed datetime:', { dateTime, shichen });
 
         // 构建请求参数
-        const params = new URLSearchParams();
-        params.append('ri', number);
-        params.append('shi', shichen.toString());
-        console.log('Request params:', params.toString());
-        console.log('Request URL:', apiUrl);
+        // const params = new URLSearchParams();
+        // params.append('ri', number);
+        // params.append('shi', shichen.toString());
+        // console.log('Request params:', params.toString());
+        // console.log('Request URL:', apiUrl);
 
-        const response = await axios.post(apiUrl, params, {
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Origin': 'https://liuren-divinations.vercel.app'
-            }
+        const response = await axios.post(apiUrl, {
+            ri: number,
+            shi: shichen.toString()
         });
 
         console.log('API Response:', response);
