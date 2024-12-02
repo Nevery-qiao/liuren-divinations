@@ -446,7 +446,13 @@ export async function getMobileDivinationInfo(params: { number: number; time: st
 
     // 默认宫位名称
     const defaultGongNames = ['大安', '留连', '速喜', '赤口', '小吉', '空亡'];
-    
+
+    // 获取宫位名称
+    const getGongName = (index: number | string): string => {
+      const idx = typeof index === 'string' ? parseInt(index, 10) : index;
+      return defaultGongNames[idx - 1] || defaultGongNames[0];
+    };
+
     // 记录每个宫位的转换过程
     const gongTransformations = [];
 
@@ -491,12 +497,12 @@ export async function getMobileDivinationInfo(params: { number: number; time: st
       divination_number: params.number.toString(),
       lunar_time: lunarInfo.lunarTime,
       yangli_time: formattedTime,
-      time_palace: (rawData.shigong || rawData['0']?.shigong || '1').toString(),
-      day_palace: (rawData.rigong || rawData['0']?.rigong || '1').toString(),
+      time_palace: getGongName(rawData.shigong || rawData['0']?.shigong || '1'),
+      day_palace: getGongName(rawData.rigong || rawData['0']?.rigong || '1'),
       gong_info: gongInfo,
       zishen_info: {
         dizhi: rawData.dizhi || rawData['0']?.dizhi || '',
-        zishen: (rawData.rigong || rawData['0']?.rigong || '1').toString()
+        zishen: getGongName(rawData.rigong || rawData['0']?.rigong || '1')
       }
     };
 
