@@ -4,6 +4,9 @@ import { Lunar } from 'lunar-typescript';
 // 使用本地代理 URL
 const API_URL = '/api/proxy';
 
+// 宫位名称常量
+const gongPositions = ["大安", "留连", "速喜", "赤口", "小吉", "空亡"];
+
 // axios 配置
 const apiClient = axios.create({
     timeout: 5000,
@@ -62,8 +65,13 @@ apiClient.interceptors.response.use(
     }
 );
 
-// 使用宫位名称数组
-const gongPositions = ["大安", "留连", "速喜", "赤口", "小吉", "空亡"];
+// 宫位索引映射
+const gongMapping = [3, 0, 1, 2, 5, 4]; // 前端顺序到API顺序的映射
+
+// 获取宫位名称 - 根据API返回的索引获取正确的宫位名称
+function getGongPositionByIndex(index: number): string {
+    return gongPositions[index - 1] || gongPositions[0];
+}
 
 export interface GongInfo {
     position: string;    // 宫位名称
@@ -270,8 +278,11 @@ export async function getDivinationInfo(params: DivinationParams): Promise<Divin
         const apiResponse = response.data;
         const lunarInfo = getLunarInfo(dateTime, numberValue);
 
-        // 基础信息
-        const baseInfo = apiResponse[0];
+        // 基础信息 - 从response.data中获取数据
+        const baseInfo = apiResponse['0'];
+        const rigong = apiResponse.rigong;
+        const shigong = apiResponse.shigong;
+
         if (!baseInfo) {
             console.error('API response is empty or invalid:', apiResponse);
             throw new Error('API 返回数据格式错误');
@@ -283,60 +294,28 @@ export async function getDivinationInfo(params: DivinationParams): Promise<Divin
         const wuxing = baseInfo.wuxing || Array(6).fill("");
         const dizhis = baseInfo.dizhis || Array(6).fill("");
 
-        // 构建完整的宫位信息
-        const gongInfo = {
-            gong1: transformGongInfo({
-                god: liushen[0],
-                relation: liuqin[0],
-                star: wuxing[0],
-                branch: dizhis[0],
-                divination_number: baseInfo.zhangshu
-            }, "大安", "1"),
-            gong2: transformGongInfo({
-                god: liushen[1],
-                relation: liuqin[1],
-                star: wuxing[1],
-                branch: dizhis[1],
-                divination_number: baseInfo.zhangshu
-            }, "留连", "2"),
-            gong3: transformGongInfo({
-                god: liushen[2],
-                relation: liuqin[2],
-                star: wuxing[2],
-                branch: dizhis[2],
-                divination_number: baseInfo.zhangshu
-            }, "速喜", "3"),
-            gong4: transformGongInfo({
-                god: liushen[3],
-                relation: liuqin[3],
-                star: wuxing[3],
-                branch: dizhis[3],
-                divination_number: baseInfo.zhangshu
-            }, "赤口", "4"),
-            gong5: transformGongInfo({
-                god: liushen[4],
-                relation: liuqin[4],
-                star: wuxing[4],
-                branch: dizhis[4],
-                divination_number: baseInfo.zhangshu
-            }, "小吉", "5"),
-            gong6: transformGongInfo({
-                god: liushen[5],
-                relation: liuqin[5],
-                star: wuxing[5],
-                branch: dizhis[5],
-                divination_number: baseInfo.zhangshu
-            }, "空亡", "6")
-        };
+        // 在时宫位置显示 API 返回的 zishen 值
+        if (shigong && baseInfo.zishen) {
+            liuqin[shigong - 1] = baseInfo.zishen;
+        }
+
+        // 打印API返回的原始值
+        console.log('API Response Values:', {
+            shigong,
+            rigong,
+            zishen: baseInfo.zishen,
+            dizhis: baseInfo.dizhis,
+            raw: baseInfo
+        });
 
         // 计算宫位
-        const timePalace = gongPositions[baseInfo.shigong - 1] || gongPositions[shichen % 6];
-        const dayPalace = gongPositions[baseInfo.rigong - 1] || gongPositions[Number(numberValue) % 6];
+        const timePalace = getGongPositionByIndex(shigong);
+        const dayPalace = getGongPositionByIndex(rigong);
 
         // 添加自身信息
         const zishenInfo = {
             dizhi: baseInfo.dizhi || "",
-            zishen: baseInfo.zishen || "",
+            zishen: getGongPositionByIndex(baseInfo.zishen),
         };
 
         const result = {
@@ -347,13 +326,99 @@ export async function getDivinationInfo(params: DivinationParams): Promise<Divin
                 yangli_time: formatDateTime(dateTime),
                 time_palace: timePalace,
                 day_palace: dayPalace,
-                gong_info: gongInfo,
+                gong_info: {
+                    gong1: transformGongInfo({
+                        god: liushen[0],
+                        relation: liuqin[0],
+                        star: wuxing[0],
+                        branch: dizhis[0],
+                        divination_number: baseInfo.zhangshu
+                    }, "大安", "1"),
+                    gong2: transformGongInfo({
+                        god: liushen[1],
+                        relation: liuqin[1],
+                        star: wuxing[1],
+                        branch: dizhis[1],
+                        divination_number: baseInfo.zhangshu
+                    }, "留连", "2"),
+                    gong3: transformGongInfo({
+                        god: liushen[2],
+                        relation: liuqin[2],
+                        star: wuxing[2],
+                        branch: dizhis[2],
+                        divination_number: baseInfo.zhangshu
+                    }, "速喜", "3"),
+                    gong4: transformGongInfo({
+                        god: liushen[3],
+                        relation: liuqin[3],
+                        star: wuxing[3],
+                        branch: dizhis[3],
+                        divination_number: baseInfo.zhangshu
+                    }, "赤口", "4"),
+                    gong5: transformGongInfo({
+                        god: liushen[4],
+                        relation: liuqin[4],
+                        star: wuxing[4],
+                        branch: dizhis[4],
+                        divination_number: baseInfo.zhangshu
+                    }, "小吉", "5"),
+                    gong6: transformGongInfo({
+                        god: liushen[5],
+                        relation: liuqin[5],
+                        star: wuxing[5],
+                        branch: dizhis[5],
+                        divination_number: baseInfo.zhangshu
+                    }, "空亡", "6")
+                },
                 zishen_info: zishenInfo,
                 debug_info: {
                     api_response: apiResponse,
                     shichen: shichen,
                     input_hour: dateTime.hour,
-                    gongInfoArray: Object.values(gongInfo)
+                    gongInfoArray: Object.values({
+                        gong1: transformGongInfo({
+                            god: liushen[0],
+                            relation: liuqin[0],
+                            star: wuxing[0],
+                            branch: dizhis[0],
+                            divination_number: baseInfo.zhangshu
+                        }, "大安", "1"),
+                        gong2: transformGongInfo({
+                            god: liushen[1],
+                            relation: liuqin[1],
+                            star: wuxing[1],
+                            branch: dizhis[1],
+                            divination_number: baseInfo.zhangshu
+                        }, "留连", "2"),
+                        gong3: transformGongInfo({
+                            god: liushen[2],
+                            relation: liuqin[2],
+                            star: wuxing[2],
+                            branch: dizhis[2],
+                            divination_number: baseInfo.zhangshu
+                        }, "速喜", "3"),
+                        gong4: transformGongInfo({
+                            god: liushen[3],
+                            relation: liuqin[3],
+                            star: wuxing[3],
+                            branch: dizhis[3],
+                            divination_number: baseInfo.zhangshu
+                        }, "赤口", "4"),
+                        gong5: transformGongInfo({
+                            god: liushen[4],
+                            relation: liuqin[4],
+                            star: wuxing[4],
+                            branch: dizhis[4],
+                            divination_number: baseInfo.zhangshu
+                        }, "小吉", "5"),
+                        gong6: transformGongInfo({
+                            god: liushen[5],
+                            relation: liuqin[5],
+                            star: wuxing[5],
+                            branch: dizhis[5],
+                            divination_number: baseInfo.zhangshu
+                        }, "空亡", "6")
+                    })
                 }
             }
         };
@@ -497,12 +562,12 @@ export async function getMobileDivinationInfo(params: { number: number; time: st
       divination_number: params.number.toString(),
       lunar_time: lunarInfo.lunarTime,
       yangli_time: formattedTime,
-      time_palace: gongPositions[(rawData.shigong - 1) % 6] || gongPositions[0],
-      day_palace: gongPositions[(rawData.rigong - 1) % 6] || gongPositions[0],
+      time_palace: getGongPositionByIndex(rawData.shigong),
+      day_palace: getGongPositionByIndex(rawData.rigong),
       gong_info: gongInfo,
       zishen_info: {
         dizhi: rawData.dizhi || rawData['0']?.dizhi || '',
-        zishen: gongPositions[(rawData.rigong - 1) % 6] || gongPositions[0]
+        zishen: getGongPositionByIndex(rawData.zishen),
       }
     };
 

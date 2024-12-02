@@ -54,7 +54,7 @@
                 :class="{
                   'time-palace': getGongInfo(i).position === divinationResult?.data?.time_palace,
                   'day-palace': getGongInfo(i).position === divinationResult?.data?.day_palace,
-                  'body-palace': getGongInfo(i).position === divinationResult?.data?.zishen_info?.zishen
+                  'body-palace': getGongInfo(i).position === divinationResult?.data?.zishen_info?.dizhi
                 }"
               >
                 <div class="gong-content">
@@ -65,18 +65,12 @@
                       <div class="gong-branch">{{ getGongInfo(i).branch }}</div>
                     </div>
                     <div class="gong-center">
-                      <template v-if="getGongInfo(i).position === divinationResult?.data?.time_palace && 
-                                    getGongInfo(i).position === divinationResult?.data?.day_palace">
-                        <div class="gong-center-text">
-                          {{ divinationResult?.data?.divination_number }} 身
-                        </div>
-                      </template>
-                      <template v-else-if="getGongInfo(i).position === divinationResult?.data?.time_palace">
+                      <template v-if="getGongInfo(i).position === divinationResult?.data?.day_palace">
                         <div class="gong-center-text">
                           {{ divinationResult?.data?.divination_number }}
                         </div>
                       </template>
-                      <template v-else-if="getGongInfo(i).position === divinationResult?.data?.day_palace">
+                      <template v-if="getGongInfo(i).position === divinationResult?.data?.time_palace">
                         <div class="gong-center-text">
                           身
                         </div>
@@ -84,7 +78,14 @@
                     </div>
                     <div class="gong-right">
                       <div class="gong-god">{{ getGongInfo(i).god }}</div>
-                      <div class="gong-relation">{{ getGongInfo(i).relation }}</div>
+                      <div class="gong-relation">
+                        <template v-if="i === divinationResult?.data?.shigong">
+                          {{ divinationResult?.data?.zishen }}
+                        </template>
+                        <template v-else>
+                          {{ getGongInfo(i).relation }}
+                        </template>
+                      </div>
                     </div>
                   </div>
                 </div>

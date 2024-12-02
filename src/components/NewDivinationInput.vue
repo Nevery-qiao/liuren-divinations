@@ -12,8 +12,7 @@
           v-model="divinationNumber"
           type="number"
           :min="1"
-          :max="100"
-          placeholder="占数"
+          placeholder="请输入占数"
           @keyup.enter="handleConfirm"
           ref="numberInput"
         />
@@ -95,9 +94,9 @@ const handleConfirm = () => {
   }
 
   const number = parseInt(divinationNumber.value);
-  if (isNaN(number) || number < 1 || number > 100) {
+  if (isNaN(number) || number < 1) {
     console.log('Invalid number:', number);
-    ElMessage.warning('占数必须是 1-100 之间的整数');
+    ElMessage.warning('占数必须是大于等于1的整数');
     return;
   }
   

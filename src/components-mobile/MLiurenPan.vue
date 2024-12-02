@@ -7,7 +7,7 @@
           :class="{
             'time-palace': getGongInfo(i).position === history.result?.data?.time_palace,
             'day-palace': getGongInfo(i).position === history.result?.data?.day_palace,
-            'body-palace': getGongInfo(i).position === history.result?.data?.zishen_info?.zishen
+            'body-palace': getGongInfo(i).position === history.result?.data?.zishen_info?.dizhi
           }"
         >
           <div class="gong-content">
@@ -24,12 +24,12 @@
                     {{ history.result?.data?.divination_number }}<span class="body-text">身</span>
                   </div>
                 </template>
-                <template v-else-if="getGongInfo(i).position === history.result?.data?.time_palace">
+                <template v-else-if="getGongInfo(i).position === history.result?.data?.day_palace">
                   <div class="gong-center-text">
                     {{ history.result?.data?.divination_number }}
                   </div>
                 </template>
-                <template v-else-if="getGongInfo(i).position === history.result?.data?.day_palace">
+                <template v-else-if="getGongInfo(i).position === history.result?.data?.time_palace">
                   <div class="gong-center-text">
                     <span class="body-text">身</span>
                   </div>
@@ -37,7 +37,14 @@
               </div>
               <div class="gong-right">
                 <div class="gong-god">{{ getGongInfo(i).god }}</div>
-                <div class="gong-relation">{{ getGongInfo(i).relation }}</div>
+                <div class="gong-relation">
+                  <template v-if="i === history.result?.data?.shigong">
+                    {{ history.result?.data?.zishen }}
+                  </template>
+                  <template v-else>
+                    {{ getGongInfo(i).relation }}
+                  </template>
+                </div>
               </div>
             </div>
           </div>
@@ -183,81 +190,92 @@ const dataIntegrity = computed(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px;
-  gap: 4px;
+  padding: 6px;
 }
 
 .gong-left,
 .gong-right {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  min-width: 24px;
+  gap: 16px;
+  min-width: 36px;
+  flex: 2;
+}
+
+.gong-right {
+  align-items: flex-end;
+}
+
+.gong-left {
+  align-items: flex-start;
 }
 
 .gong-center {
   display: flex;
   justify-content: center;
   align-items: center;
-  flex: 1;
+  min-width: 20px;
+  padding: 0;
 }
 
 .gong-center-text {
-  font-size: 18px;
+  font-size: 15px;
   color: #4CAF50;
   font-weight: 500;
 }
 
-.gong-star {
+.body-text {
   font-size: 15px;
-  font-weight: bold;
-  color: #9C27B0;
+}
+
+.gong-star,
+.gong-branch,
+.gong-god,
+.gong-relation {
+  font-size: 15px;
   line-height: 1.2;
+  white-space: nowrap;
+}
+
+.gong-star {
+  color: #9C27B0;
 }
 
 .gong-branch {
-  font-size: 15px;
-  font-weight: bold;
   color: #2196F3;
-  line-height: 1.2;
 }
 
 .gong-god {
-  font-size: 15px;
   font-weight: bold;
   color: #E91E63;
   text-align: right;
-  line-height: 1.2;
 }
 
 .gong-relation {
-  font-size: 15px;
-  font-weight: bold;
   color: #FF9800;
   text-align: right;
-  line-height: 1.2;
 }
 
 .time-palace {
-  background-color: rgba(33, 150, 243, 0.05);
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.time-palace .gong-position {
-  background-color: rgba(33, 150, 243, 0.1);
-  color: #2196F3;
-}
-
-.day-palace {
   background-color: rgba(76, 175, 80, 0.05);
   border-radius: 8px;
   overflow: hidden;
 }
 
-.day-palace .gong-position {
+.time-palace .gong-position {
   background-color: rgba(76, 175, 80, 0.1);
   color: #4CAF50;
+}
+
+.day-palace {
+  background-color: rgba(33, 150, 243, 0.05);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.day-palace .gong-position {
+  background-color: rgba(33, 150, 243, 0.1);
+  color: #2196F3;
 }
 
 .body-palace {
@@ -269,11 +287,5 @@ const dataIntegrity = computed(() => {
 .body-palace .gong-position {
   color: #4CAF50;
   background-color: rgba(76, 175, 80, 0.1);
-}
-
-.body-text {
-  font-size: 16px;
-  color: #4CAF50;
-  font-weight: 500;
 }
 </style>

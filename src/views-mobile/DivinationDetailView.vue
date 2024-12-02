@@ -18,10 +18,11 @@
         <div class="lunar-time">{{ currentHistory.result?.data?.lunar_time }}</div>
         <div class="solar-time">{{ dayjs(currentHistory.timestamp).format('YYYY年MM月DD日 HH:mm') }}</div>
       </div>
-      <m-liuren-pan :history="currentHistory" />
+      <m-liuren-pan :history="currentHistory" class="liuren-pan" />
       <divination-notes
         v-model="notes"
         @save="handleNotesSave"
+        class="divination-notes"
       />
     </div>
 
@@ -238,7 +239,9 @@ async function refreshDivination() {
 .content {
   flex: 1;
   overflow-y: auto;
-  padding: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
 }
 
 .divination-info {
@@ -249,7 +252,7 @@ async function refreshDivination() {
   padding: 12px;
   background: #fff;
   border-radius: 8px;
-  margin-bottom: 12px;
+  margin-bottom: 24px;
   cursor: pointer;
 }
 
@@ -264,7 +267,7 @@ async function refreshDivination() {
 }
 
 .time-info {
-  margin-bottom: 12px;
+  margin-bottom: 24px;
   text-align: center;
 }
 
@@ -277,6 +280,14 @@ async function refreshDivination() {
 .solar-time {
   font-size: 14px;
   color: #666;
+}
+
+.liuren-pan {
+  margin-bottom: 24px;
+}
+
+.divination-notes {
+  margin-top: 0;
 }
 
 .edit-dialog {
