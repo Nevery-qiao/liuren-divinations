@@ -491,12 +491,12 @@ export async function getMobileDivinationInfo(params: { number: number; time: st
       divination_number: params.number.toString(),
       lunar_time: lunarInfo.lunarTime,
       yangli_time: formattedTime,
-      time_palace: rawData.shigong?.toString() || '1',
-      day_palace: rawData.rigong?.toString() || '1',
+      time_palace: (rawData.shigong || rawData['0']?.shigong || '1').toString(),
+      day_palace: (rawData.rigong || rawData['0']?.rigong || '1').toString(),
       gong_info: gongInfo,
       zishen_info: {
-        dizhi: rawData.dizhi || '',
-        zishen: rawData.rigong?.toString() || '1'
+        dizhi: rawData.dizhi || rawData['0']?.dizhi || '',
+        zishen: (rawData.rigong || rawData['0']?.rigong || '1').toString()
       }
     };
 
