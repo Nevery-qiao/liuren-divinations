@@ -177,57 +177,41 @@ export interface DivinationResult {
 }
 
 export async function getDivinationInfo(params: DivinationParams): Promise<DivinationResult> {
-    // 添加更详细的日志
-    console.log('getDivinationInfo called with:', {
-        rawParams: params,
-        paramsType: typeof params,
-        isObject: params instanceof Object,
-        hasNumber: 'number' in params,
-        numberValue: params.number,
-        numberType: typeof params.number,
-        hasTime: 'time' in params,
-        timeValue: params.time,
-        timeType: typeof params.time,
-        environment: process.env.NODE_ENV
-    });
-    
-    console.log('Starting getDivinationInfo with:', {
-        params,
-        numberType: typeof params.number,
-        numberValue: params.number,
-        timeType: typeof params.time,
-        timeValue: params.time
+    // 规范化参数
+    const normalizedParams = typeof params === 'object' ? params : {
+        number: params,
+        time: undefined
+    };
+
+    console.log('getDivinationInfo normalized params:', {
+        original: params,
+        normalized: normalizedParams,
+        numberType: typeof normalizedParams.number,
+        timeType: typeof normalizedParams.time
     });
     
     try {
         // 验证参数
-        if (params.number === undefined || params.number === null || params.number === '') {
+        const numberValue = normalizedParams.number?.toString();
+        if (!numberValue) {
             console.error('Validation failed: number is empty or invalid', {
-                number: params.number,
-                type: typeof params.number,
-                truthyCheck: !!params.number
+                number: normalizedParams.number,
+                type: typeof normalizedParams.number,
+                truthyCheck: !!normalizedParams.number
             });
             throw new Error('占数不能为空');
         }
 
-        const { dateTime, shichen } = parseDateTime(params.time);
+        const { dateTime, shichen } = parseDateTime(normalizedParams.time);
         console.log('Parsed date time:', {
-            input: params.time,
+            input: normalizedParams.time,
             parsed: dateTime,
             shichen,
         });
 
-        // 确保 number 是字符串类型
-        const number = params.number.toString();
-        console.log('Extracted number:', {
-            original: params.number,
-            converted: number,
-            type: typeof number
-        });
-
         // 构建请求参数
         const requestParams = {
-            ri: number,
+            ri: numberValue,
             shi: shichen.toString()
         };
 
@@ -255,7 +239,7 @@ export async function getDivinationInfo(params: DivinationParams): Promise<Divin
 
         // Transform API response
         const apiResponse = response.data;
-        const lunarInfo = getLunarInfo(dateTime, number);
+        const lunarInfo = getLunarInfo(dateTime, numberValue);
 
         // 基础信息
         const baseInfo = apiResponse[0];
@@ -311,7 +295,7 @@ export async function getDivinationInfo(params: DivinationParams): Promise<Divin
 
         // 计算宫位
         const timePalace = gongPositions[apiResponse.shigong - 1] || gongPositions[shichen % 6];
-        const dayPalace = gongPositions[apiResponse.rigong - 1] || gongPositions[Number(number) % 6];
+        const dayPalace = gongPositions[apiResponse.rigong - 1] || gongPositions[Number(numberValue) % 6];
 
         // 添加自身信息
         const zishenInfo = {
@@ -322,7 +306,7 @@ export async function getDivinationInfo(params: DivinationParams): Promise<Divin
         return {
             code: 0,
             data: {
-                divination_number: number,
+                divination_number: numberValue,
                 lunar_time: lunarInfo.lunarTime,
                 yangli_time: formatDateTime(dateTime),
                 time_palace: timePalace,
