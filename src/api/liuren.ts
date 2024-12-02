@@ -177,6 +177,20 @@ export interface DivinationResult {
 }
 
 export async function getDivinationInfo(params: DivinationParams): Promise<DivinationResult> {
+    // 添加更详细的日志
+    console.log('getDivinationInfo called with:', {
+        rawParams: params,
+        paramsType: typeof params,
+        isObject: params instanceof Object,
+        hasNumber: 'number' in params,
+        numberValue: params.number,
+        numberType: typeof params.number,
+        hasTime: 'time' in params,
+        timeValue: params.time,
+        timeType: typeof params.time,
+        environment: process.env.NODE_ENV
+    });
+    
     console.log('Starting getDivinationInfo with:', {
         params,
         numberType: typeof params.number,
