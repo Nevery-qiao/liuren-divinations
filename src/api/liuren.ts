@@ -500,6 +500,23 @@ export async function getMobileDivinationInfo(params: { number: number; time: st
       }
     };
 
+    // 添加调试日志
+    console.log('[getMobileDivinationInfo] Raw data structure:', {
+      rawData,
+      shigong: rawData.shigong,
+      rigong: rawData.rigong,
+      baseInfo: rawData['0'],
+      baseShigong: rawData['0']?.shigong,
+      baseRigong: rawData['0']?.rigong
+    });
+
+    console.log('[getMobileDivinationInfo] Final data structure:', {
+      time_palace: resultData.time_palace,
+      day_palace: resultData.day_palace,
+      zishen: resultData.zishen_info.zishen,
+      gongInfo: resultData.gong_info
+    });
+
     console.log('[getMobileDivinationInfo] Step 10 - Processed result:', { code: 0, data: resultData });
 
     return {
