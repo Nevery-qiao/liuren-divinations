@@ -1,7 +1,7 @@
 <template>
   <div class="m-liuren-pan">
     <div class="gong-grid">
-      <template v-for="i in [1, 2, 3, 4, 5, 6]" :key="i">
+      <template v-for="i in [2, 3, 4, 1, 6, 5]" :key="i">
         <div 
           class="gong-item"
           :class="{
@@ -9,6 +9,7 @@
             'day-palace': getGongInfo(i).position === history.result?.data?.day_palace,
             'body-palace': getGongInfo(i).position === history.result?.data?.zishen_info?.zishen
           }"
+          :style="{ order: i }"
         >
           <div class="gong-content">
             <div class="gong-position">{{ getGongInfo(i).position }}</div>
@@ -137,67 +138,68 @@ const dataIntegrity = computed(() => {
 
 <style scoped>
 .m-liuren-pan {
-  margin-bottom: 16px;
+  padding: 16px;
 }
 
 .gong-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 2px;
-  background-color: #e8e8e8;
-  border-radius: 8px;
-  overflow: hidden;
-  padding: 2px;
+  grid-template-rows: repeat(2, 1fr);
+  gap: 8px;
+  max-width: 100%;
+  margin: 0 auto;
 }
 
 .gong-item {
   background-color: #fff;
-  padding: 0;
-  min-height: 100px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e0e0e0;
   border-radius: 4px;
-  overflow: hidden;
+  padding: 8px;
+  position: relative;
 }
 
 .gong-content {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  gap: 8px;
 }
 
 .gong-position {
-  padding: 12px;
-  font-size: 18px;
-  font-weight: 500;
-  color: #8b5e34;
-  background-color: rgba(139, 94, 52, 0.05);
+  font-size: 20px;
+  font-weight: bold;
+  color: #795548;
   text-align: center;
-  border-bottom: 1px solid rgba(139, 94, 52, 0.1);
+  padding: 4px;
+  background-color: rgba(121, 85, 72, 0.05);
+  border-radius: 4px;
 }
 
 .gong-main {
-  flex: 1;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px;
-  height: 100%;
+  gap: 8px;
 }
 
-.gong-left,
+.gong-left {
+  flex: 1;
+  text-align: left;
+}
+
 .gong-right {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  flex: 1;
+  text-align: right;
 }
 
 .gong-star {
-  font-size: 16px;
-  color: #9C27B0;
+  font-size: 18px;
+  font-weight: bold;
+  color: #E91E63;
 }
 
 .gong-branch {
-  font-size: 16px;
+  font-size: 18px;
+  font-weight: bold;
   color: #2196F3;
 }
 
