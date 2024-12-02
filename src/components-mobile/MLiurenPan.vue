@@ -9,7 +9,6 @@
             'day-palace': getGongInfo(i).position === history.result?.data?.day_palace,
             'body-palace': getGongInfo(i).position === history.result?.data?.zishen_info?.zishen
           }"
-          :style="{ order: i }"
         >
           <div class="gong-content">
             <div class="gong-position">{{ getGongInfo(i).position }}</div>
@@ -138,7 +137,9 @@ const dataIntegrity = computed(() => {
 
 <style scoped>
 .m-liuren-pan {
-  padding: 16px;
+  width: 100%;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 .gong-grid {
@@ -146,93 +147,100 @@ const dataIntegrity = computed(() => {
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(2, 1fr);
   gap: 8px;
-  max-width: 100%;
+  width: 100%;
   margin: 0 auto;
 }
 
 .gong-item {
-  background-color: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  padding: 8px;
   position: relative;
+  border: 1px solid rgba(139, 94, 52, 0.2);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+  transition: all 0.3s ease;
+  min-height: 130px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .gong-content {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  height: 100%;
 }
 
 .gong-position {
-  font-size: 20px;
-  font-weight: bold;
-  color: #795548;
+  padding: 8px;
+  font-size: 17px;
+  font-weight: 500;
+  color: #8b5e34;
+  background-color: rgba(139, 94, 52, 0.05);
   text-align: center;
-  padding: 4px;
-  background-color: rgba(121, 85, 72, 0.05);
-  border-radius: 4px;
+  border-bottom: 1px solid rgba(139, 94, 52, 0.1);
 }
 
 .gong-main {
+  flex: 1;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 8px;
+  padding: 10px;
+  gap: 4px;
 }
 
-.gong-left {
-  flex: 1;
-  text-align: left;
-}
-
+.gong-left,
 .gong-right {
-  flex: 1;
-  text-align: right;
-}
-
-.gong-star {
-  font-size: 18px;
-  font-weight: bold;
-  color: #E91E63;
-}
-
-.gong-branch {
-  font-size: 18px;
-  font-weight: bold;
-  color: #2196F3;
-}
-
-.gong-god {
-  font-size: 18px;
-  font-weight: bold;
-  color: #E91E63;
-  text-align: right;
-}
-
-.gong-relation {
-  font-size: 18px;
-  font-weight: bold;
-  color: #FF9800;
-  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 24px;
 }
 
 .gong-center {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-width: 60px;
+  flex: 1;
 }
 
 .gong-center-text {
-  font-size: 16px;
+  font-size: 18px;
   color: #4CAF50;
   font-weight: 500;
 }
 
+.gong-star {
+  font-size: 15px;
+  font-weight: bold;
+  color: #9C27B0;
+  line-height: 1.2;
+}
+
+.gong-branch {
+  font-size: 15px;
+  font-weight: bold;
+  color: #2196F3;
+  line-height: 1.2;
+}
+
+.gong-god {
+  font-size: 15px;
+  font-weight: bold;
+  color: #E91E63;
+  text-align: right;
+  line-height: 1.2;
+}
+
+.gong-relation {
+  font-size: 15px;
+  font-weight: bold;
+  color: #FF9800;
+  text-align: right;
+  line-height: 1.2;
+}
+
 .time-palace {
-  background-color: rgba(33, 150, 243, 0.05) !important;
-  border-radius: 4px;
+  background-color: rgba(33, 150, 243, 0.05);
+  border-radius: 8px;
   overflow: hidden;
 }
 
@@ -243,7 +251,7 @@ const dataIntegrity = computed(() => {
 
 .day-palace {
   background-color: rgba(76, 175, 80, 0.05);
-  border-radius: 4px;
+  border-radius: 8px;
   overflow: hidden;
 }
 
@@ -254,7 +262,7 @@ const dataIntegrity = computed(() => {
 
 .body-palace {
   background-color: rgba(76, 175, 80, 0.05);
-  border-radius: 4px;
+  border-radius: 8px;
   overflow: hidden;
 }
 

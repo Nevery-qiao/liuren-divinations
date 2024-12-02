@@ -238,7 +238,7 @@ async function refreshDivination() {
 .content {
   flex: 1;
   overflow-y: auto;
-  padding: 16px;
+  padding: 8px;
 }
 
 .divination-info {
@@ -264,7 +264,7 @@ async function refreshDivination() {
 }
 
 .time-info {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   text-align: center;
 }
 
