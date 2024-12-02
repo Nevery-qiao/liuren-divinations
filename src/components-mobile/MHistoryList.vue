@@ -14,8 +14,8 @@
             <div class="item-content">
               <div class="item-emoji">{{ item.emoji || '🔮' }}</div>
               <div class="item-info">
-                <div class="item-question">{{ item.question }}</div>
-                <div class="item-time">{{ item.createdAt }}</div>
+                <div class="item-question">【{{ item.number }}】{{ item.question || '点击添加问题' }}</div>
+                <div class="item-time">{{ formatTime(item.timestamp) }}</div>
               </div>
             </div>
             <el-dropdown 

@@ -85,16 +85,22 @@ export interface GongCollection {
 }
 
 // Transform API response
-function transformGongInfo(info: any, position: string, number: string): GongInfo {
-    return {
-        position,
-        god: info.god || "",
-        relation: info.relation || "",
-        star: info.star || "",
-        branch: info.branch || "",
-        number,
-        divination_number: info.divination_number
-    };
+const transformGongInfo = (info: {
+  god: string;
+  relation: string;
+  star: string;
+  branch: string;
+  divination_number: string;
+}, position: string, index: string): GongInfo => {
+  return {
+    position: position || index,
+    star: info.star || '',
+    branch: info.branch || '',
+    god: info.god || '',
+    relation: info.relation || '',
+    number: index,
+    divination_number: info.divination_number || ''
+  }
 }
 
 function getLunarInfo(dateTime: { year: number; month: number; day: number; hour: number }, divination_number: string) {
@@ -102,7 +108,7 @@ function getLunarInfo(dateTime: { year: number; month: number; day: number; hour
     const lunar = Lunar.fromDate(date);
     
     return {
-        lunarTime: `${lunar.getYearInChinese()}年${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}日 ${lunar.getTimeZhi()}时`,
+        lunarTime: `${lunar.getYearInGanZhi()}年  ${lunar.getMonthInGanZhi()}月  ${lunar.getDayInGanZhi()}日  ${lunar.getTimeInGanZhi()}时 【数字：${divination_number}】`,
         divination_number
     };
 }
@@ -125,33 +131,53 @@ export function parseDateTime(timeStr: string | undefined): { dateTime: { year: 
 
     let year: number, month: number, day: number, hour: number = 0, minute: number = 0;
 
-    if (timeStr.includes(' ')) {
-        console.log('Processing time with space');
-        const [dateStr, timeStr] = timeStr.split(' ');
-        const [y, m, d] = dateStr.split('-').map(Number);
-        const [h, min] = timeStr.split(':').map(Number);
-        
-        year = y;
-        month = m;
-        day = d;
-        hour = h;
-        minute = min;
-    } else {
-        console.log('Processing time with hyphens only');
-        const [y, m, d, timeStr] = timeStr.split('-');
-        const [h, min] = timeStr ? timeStr.split(':').map(Number) : [0, 0];
-        
-        year = parseInt(y);
-        month = parseInt(m);
-        day = parseInt(d);
-        hour = h || 0;
-        minute = min || 0;
-    }
+    try {
+        if (timeStr.includes(' ')) {
+            console.log('Processing time with space');
+            const [dateStr, timeComponent] = timeStr.split(' ');
+            const [y, m, d] = dateStr.split('-').map(Number);
+            const [h, min] = timeComponent.split(':').map(Number);
+            
+            year = y;
+            month = m;
+            day = d;
+            hour = h;
+            minute = min;
+        } else {
+            console.log('Processing time with hyphens only');
+            const parts = timeStr.split('-');
+            year = parseInt(parts[0]);
+            month = parseInt(parts[1]);
+            day = parseInt(parts[2]);
+            if (parts[3]) {
+                const [h, min] = parts[3].split(':').map(Number);
+                hour = h || 0;
+                minute = min || 0;
+            }
+        }
 
-    return {
-        dateTime: { year, month, day, hour, minute },
-        shichen: getShichen(hour)
-    };
+        if (isNaN(year) || isNaN(month) || isNaN(day) || isNaN(hour) || isNaN(minute)) {
+            throw new Error('Invalid date time format');
+        }
+
+        return {
+            dateTime: { year, month, day, hour, minute },
+            shichen: getShichen(hour)
+        };
+    } catch (error) {
+        console.error('Error parsing date time:', error);
+        const now = new Date();
+        return {
+            dateTime: {
+                year: now.getFullYear(),
+                month: now.getMonth() + 1,
+                day: now.getDate(),
+                hour: now.getHours(),
+                minute: now.getMinutes()
+            },
+            shichen: getShichen(now.getHours())
+        };
+    }
 }
 
 export interface DivinationParams {
@@ -174,8 +200,10 @@ export interface DivinationResult {
         };
         debug_info?: any;
     } | null;
+    msg?: string;
 }
 
+// PC 端占卜信息获取
 export async function getDivinationInfo(params: DivinationParams): Promise<DivinationResult> {
     // 规范化参数
     const normalizedParams = typeof params === 'object' ? params : {
@@ -202,6 +230,7 @@ export async function getDivinationInfo(params: DivinationParams): Promise<Divin
             throw new Error('占数不能为空');
         }
 
+        // 解析时间
         const { dateTime, shichen } = parseDateTime(normalizedParams.time);
         console.log('Parsed date time:', {
             input: normalizedParams.time,
@@ -244,58 +273,65 @@ export async function getDivinationInfo(params: DivinationParams): Promise<Divin
         // 基础信息
         const baseInfo = apiResponse[0];
         if (!baseInfo) {
+            console.error('API response is empty or invalid:', apiResponse);
             throw new Error('API 返回数据格式错误');
         }
+
+        // 确保所有必要的数组都存在
+        const liushen = baseInfo.liushen || Array(6).fill("");
+        const liuqin = baseInfo.liuqin || Array(6).fill("");
+        const wuxing = baseInfo.wuxing || Array(6).fill("");
+        const dizhis = baseInfo.dizhis || Array(6).fill("");
 
         // 构建完整的宫位信息
         const gongInfo = {
             gong1: transformGongInfo({
-                god: baseInfo.liushen?.[0] || "",
-                relation: baseInfo.liuqin?.[0] || "",
-                star: baseInfo.wuxing?.[0] || "",
-                branch: baseInfo.dizhis?.[0] || "",
-                divination_number: baseInfo.zhangshu || ""
+                god: liushen[0],
+                relation: liuqin[0],
+                star: wuxing[0],
+                branch: dizhis[0],
+                divination_number: baseInfo.zhangshu
             }, "大安", "1"),
             gong2: transformGongInfo({
-                god: baseInfo.liushen?.[1] || "",
-                relation: baseInfo.liuqin?.[1] || "",
-                star: baseInfo.wuxing?.[1] || "",
-                branch: baseInfo.dizhis?.[1] || "",
-                divination_number: baseInfo.zhangshu || ""
+                god: liushen[1],
+                relation: liuqin[1],
+                star: wuxing[1],
+                branch: dizhis[1],
+                divination_number: baseInfo.zhangshu
             }, "留连", "2"),
             gong3: transformGongInfo({
-                god: baseInfo.liushen?.[2] || "",
-                relation: baseInfo.liuqin?.[2] || "",
-                star: baseInfo.wuxing?.[2] || "",
-                branch: baseInfo.dizhis?.[2] || "",
-                divination_number: baseInfo.zhangshu || ""
+                god: liushen[2],
+                relation: liuqin[2],
+                star: wuxing[2],
+                branch: dizhis[2],
+                divination_number: baseInfo.zhangshu
             }, "速喜", "3"),
             gong4: transformGongInfo({
-                god: baseInfo.liushen?.[3] || "",
-                relation: baseInfo.liuqin?.[3] || "",
-                star: baseInfo.wuxing?.[3] || "",
-                branch: baseInfo.dizhis?.[3] || "",
-                divination_number: baseInfo.zhangshu || ""
+                god: liushen[3],
+                relation: liuqin[3],
+                star: wuxing[3],
+                branch: dizhis[3],
+                divination_number: baseInfo.zhangshu
             }, "赤口", "4"),
             gong5: transformGongInfo({
-                god: baseInfo.liushen?.[4] || "",
-                relation: baseInfo.liuqin?.[4] || "",
-                star: baseInfo.wuxing?.[4] || "",
-                branch: baseInfo.dizhis?.[4] || "",
-                divination_number: baseInfo.zhangshu || ""
+                god: liushen[4],
+                relation: liuqin[4],
+                star: wuxing[4],
+                branch: dizhis[4],
+                divination_number: baseInfo.zhangshu
             }, "小吉", "5"),
             gong6: transformGongInfo({
-                god: baseInfo.liushen?.[5] || "",
-                relation: baseInfo.liuqin?.[5] || "",
-                star: baseInfo.wuxing?.[5] || "",
-                branch: baseInfo.dizhis?.[5] || "",
-                divination_number: baseInfo.zhangshu || ""
+                god: liushen[5],
+                relation: liuqin[5],
+                star: wuxing[5],
+                branch: dizhis[5],
+                divination_number: baseInfo.zhangshu
             }, "空亡", "6")
         };
 
         // 计算宫位
-        const timePalace = gongPositions[apiResponse.shigong - 1] || gongPositions[shichen % 6];
-        const dayPalace = gongPositions[apiResponse.rigong - 1] || gongPositions[Number(numberValue) % 6];
+        const timePalace = gongPositions[baseInfo.shigong - 1] || gongPositions[shichen % 6];
+        const dayPalace = gongPositions[baseInfo.rigong - 1] || gongPositions[Number(numberValue) % 6];
 
         // 添加自身信息
         const zishenInfo = {
@@ -303,7 +339,7 @@ export async function getDivinationInfo(params: DivinationParams): Promise<Divin
             zishen: baseInfo.zishen || "",
         };
 
-        return {
+        const result = {
             code: 0,
             data: {
                 divination_number: numberValue,
@@ -321,6 +357,9 @@ export async function getDivinationInfo(params: DivinationParams): Promise<Divin
                 }
             }
         };
+
+        console.log('Processed result:', result);
+        return result;
     } catch (error: any) {
         console.error('Error in getDivinationInfo:', error);
         return {
@@ -328,6 +367,154 @@ export async function getDivinationInfo(params: DivinationParams): Promise<Divin
             data: null
         };
     }
+}
+
+// 移动端占卜信息获取
+export async function getMobileDivinationInfo(params: { number: number; time: string }): Promise<DivinationResult> {
+  try {
+    console.log('[getMobileDivinationInfo] Step 1 - Input params:', {
+      number: params.number,
+      numberType: typeof params.number,
+      time: params.time,
+      timeType: typeof params.time
+    });
+
+    // 处理时间中的空格
+    const parsedDateTime = parseDateTime(params.time);
+    const shichen = getShichen(parsedDateTime.dateTime.hour);
+    console.log('[getMobileDivinationInfo] Step 2 - Parsed time:', {
+      parsedDateTime,
+      dateTimeFormat: parsedDateTime.dateTime,
+      hour: parsedDateTime.dateTime.hour,
+      shichen
+    });
+
+    const formattedTime = formatDateTime(parsedDateTime.dateTime);
+    console.log('[getMobileDivinationInfo] Step 3 - Formatted time:', {
+      formattedTime,
+      originalDateTime: parsedDateTime.dateTime
+    });
+
+    // 构建请求参数
+    const requestParams = {
+      ri: params.number.toString(),
+      shi: shichen.toString()
+    };
+    console.log('[getMobileDivinationInfo] Step 4 - Request params:', {
+      params: requestParams,
+      originalNumber: params.number,
+      originalShichen: shichen
+    });
+
+    const response = await apiClient.get(`${API_URL}`, {
+      params: requestParams
+    });
+    console.log('[getMobileDivinationInfo] Step 5 - Raw API response:', {
+      status: response.status,
+      headers: response.headers,
+      data: response.data
+    });
+
+    const rawData = response.data;
+    if (!rawData || typeof rawData !== 'object') {
+      console.error('[getMobileDivinationInfo] Step 6 - Invalid API response format:', rawData);
+      throw new Error('Invalid API response format');
+    }
+
+    // 获取基础数据
+    const baseInfo = rawData['0'] || {};
+    console.log('[getMobileDivinationInfo] Step 7 - Base info:', {
+      baseInfo,
+      hasLiushen: !!baseInfo.liushen,
+      hasLiuqin: !!baseInfo.liuqin,
+      hasWuxing: !!baseInfo.wuxing,
+      hasDizhis: !!baseInfo.dizhis
+    });
+
+    const { liushen = [], liuqin = [], wuxing = [], dizhis = [], gongPositions = [] } = baseInfo;
+
+    // 验证数组长度
+    if (liushen.length !== 6 || liuqin.length !== 6 || wuxing.length !== 6 || dizhis.length !== 6) {
+      console.error('[getMobileDivinationInfo] Step 8 - Invalid array lengths:', {
+        liushen: liushen.length,
+        liuqin: liuqin.length,
+        wuxing: wuxing.length,
+        dizhis: dizhis.length,
+        arrays: { liushen, liuqin, wuxing, dizhis }
+      });
+    }
+
+    // 默认宫位名称
+    const defaultGongNames = ['大安', '留连', '速喜', '赤口', '小吉', '空亡'];
+    
+    // 记录每个宫位的转换过程
+    const gongTransformations = [];
+
+    // 构建完整的宫位信息
+    const gongInfo: GongCollection = {};
+    
+    // 遍历构建宫位信息
+    for (let i = 0; i < 6; i++) {
+      const gongNumber = (i + 1).toString();
+      const gongData = {
+        god: liushen[i] || '',
+        relation: liuqin[i] || '',
+        star: wuxing[i] || '',
+        branch: dizhis[i] || '',
+        divination_number: params.number.toString()
+      };
+      
+      console.log(`[getMobileDivinationInfo] Step 9.${i + 1} - Processing gong ${gongNumber}:`, {
+        input: gongData,
+        position: gongPositions[i] || defaultGongNames[i],
+        number: gongNumber
+      });
+
+      gongInfo[`gong${gongNumber}`] = transformGongInfo(
+        gongData,
+        gongPositions[i] || defaultGongNames[i],
+        gongNumber
+      );
+
+      console.log(`[getMobileDivinationInfo] Step 9.${i + 1} - Transformed gong ${gongNumber}:`, {
+        result: gongInfo[`gong${gongNumber}`]
+      });
+    }
+
+    console.log('[getMobileDivinationInfo] Step 9 - Complete gong info:', gongInfo);
+
+    // 获取农历信息
+    const lunarInfo = getLunarInfo(parsedDateTime.dateTime, params.number.toString());
+
+    // 构建完整的结果数据
+    const resultData = {
+      divination_number: params.number.toString(),
+      lunar_time: lunarInfo.lunarTime,
+      yangli_time: formattedTime,
+      time_palace: rawData.shigong?.toString() || '1',
+      day_palace: rawData.rigong?.toString() || '1',
+      gong_info: gongInfo,
+      zishen_info: {
+        dizhi: rawData.dizhi || '',
+        zishen: rawData.rigong?.toString() || '1'
+      }
+    };
+
+    console.log('[getMobileDivinationInfo] Step 10 - Processed result:', { code: 0, data: resultData });
+
+    return {
+      code: 0,
+      data: resultData,
+      msg: ''
+    }
+  } catch (error) {
+    console.error('[getMobileDivinationInfo] Error:', error)
+    return {
+      code: -1,
+      data: null,
+      msg: error instanceof Error ? error.message : '获取占卜信息失败'
+    }
+  }
 }
 
 // 计算时辰

@@ -18,7 +18,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useHistoryStore } from '../stores/history'
-import { getDivinationInfo } from '../api/liuren'
+import { getMobileDivinationInfo } from '../api/liuren'
 import MHistoryList from '../components-mobile/MHistoryList.vue'
 import MNewDivinationDrawer from '../components-mobile/MNewDivinationDrawer.vue'
 import { ElMessage } from 'element-plus'
@@ -30,14 +30,14 @@ const showDrawer = ref(false)
 const handleNewDivination = async (data: { number: number; time: string; question?: string }) => {
   try {
     console.log('New divination:', data);
-    console.log('Creating date with:', { number: data.number, time: data.time });
-    console.log('Getting divination for:', { number: data.number, time: data.time });
-
-    // 先获取占卜结果
-    const result = await getDivinationInfo({
-      number: data.number.toString(),
+    
+    // 获取占卜结果
+    const result = await getMobileDivinationInfo({
+      number: data.number,
       time: data.time
     });
+    
+    console.log('Got divination result:', result);
     
     if (result.code === 0 && result.data) {
       // 创建历史记录
@@ -48,18 +48,25 @@ const handleNewDivination = async (data: { number: number; time: string; questio
         question: data.question || '',
         timestamp: Date.now(),
         notes: '',
-        result: result.data
+        result: {
+          code: 0,
+          data: result.data,
+          msg: ''
+        },
+        hasResult: true
       }
+      
+      console.log('Created new history:', history);
       
       // 添加到历史记录并跳转
       historyStore.addHistory(history)
       router.push(`/mobile/divination/${history.id}`)
     } else {
-      console.error('[HistoryListView] Invalid result:', result)
-      ElMessage.error(result.msg || '获取占卜信息失败，请稍后重试')
+      console.error('Invalid result:', result)
+      ElMessage.error(result.msg || `获取占卜信息失败，错误代码：${result.code}`)
     }
   } catch (error) {
-    console.error('[HistoryListView] Failed to get divination result:', error)
+    console.error('Failed to get divination result:', error)
     ElMessage.error(error instanceof Error ? error.message : '获取占卜信息失败，请稍后重试')
   }
 }
