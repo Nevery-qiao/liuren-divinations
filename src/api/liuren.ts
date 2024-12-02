@@ -156,7 +156,7 @@ export function parseDateTime(timeStr: string | undefined): { dateTime: { year: 
 
 export interface DivinationParams {
     time?: string;
-    number: string;
+    number: number | string;  // 支持数字或字符串类型
 }
 
 export interface DivinationResult {
@@ -187,7 +187,7 @@ export async function getDivinationInfo(params: DivinationParams): Promise<Divin
     
     try {
         // 验证参数
-        if (!params.number) {
+        if (params.number === undefined || params.number === null || params.number === '') {
             console.error('Validation failed: number is empty or invalid', {
                 number: params.number,
                 type: typeof params.number,
@@ -203,10 +203,11 @@ export async function getDivinationInfo(params: DivinationParams): Promise<Divin
             shichen,
         });
 
-        const { number } = params;
+        // 确保 number 是字符串类型
+        const number = params.number.toString();
         console.log('Extracted number:', {
             original: params.number,
-            extracted: number,
+            converted: number,
             type: typeof number
         });
 
