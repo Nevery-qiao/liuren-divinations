@@ -5,9 +5,9 @@
         <div 
           class="gong-item"
           :class="{
-            'time-palace': String(i) === String(history.result?.data?.time_palace),
-            'day-palace': String(i) === String(history.result?.data?.day_palace),
-            'body-palace': String(i) === String(history.result?.data?.zishen_info?.zishen)
+            'time-palace': getGongInfo(i).position === history.result?.data?.time_palace,
+            'day-palace': getGongInfo(i).position === history.result?.data?.day_palace,
+            'body-palace': getGongInfo(i).position === history.result?.data?.zishen_info?.zishen
           }"
         >
           <div class="gong-content">
@@ -18,18 +18,18 @@
                 <div class="gong-branch">{{ getGongInfo(i).branch }}</div>
               </div>
               <div class="gong-center">
-                <template v-if="String(i) === String(history.result?.data?.time_palace) && 
-                              String(i) === String(history.result?.data?.day_palace)">
+                <template v-if="getGongInfo(i).position === history.result?.data?.time_palace && 
+                              getGongInfo(i).position === history.result?.data?.day_palace">
                   <div class="gong-center-text">
                     {{ history.result?.data?.divination_number }}<span class="body-text">身</span>
                   </div>
                 </template>
-                <template v-else-if="String(i) === String(history.result?.data?.time_palace)">
+                <template v-else-if="getGongInfo(i).position === history.result?.data?.time_palace">
                   <div class="gong-center-text">
                     {{ history.result?.data?.divination_number }}
                   </div>
                 </template>
-                <template v-else-if="String(i) === String(history.result?.data?.day_palace)">
+                <template v-else-if="getGongInfo(i).position === history.result?.data?.day_palace">
                   <div class="gong-center-text">
                     <span class="body-text">身</span>
                   </div>
